@@ -10,6 +10,7 @@
 import { CONFIG } from './config.js';
 import { creerEnvironnement, creerRendu } from './coeur/scene.js';
 import { ajouterSolOmbres, chargerAmbiance } from './coeur/ambiance.js';
+import { choisirPlace } from './coeur/choixPlace.js';
 import { SessionXR } from './coeur/sessionXR.js';
 import { ARTICLES } from './marche/articles.js';
 import { BibliothequeModeles } from './marche/modeles3D.js';
@@ -23,6 +24,42 @@ const renderer = creerRendu(document.getElementById('scene'), camera);
 ajouterSolOmbres(scene, CONFIG.ambiance);
 
 /**
+ * Lit la dernière place affichée, retenue par le navigateur.
+ * La mémoire du navigateur peut être indisponible (navigation privée,
+ * données bloquées) : on renvoie alors `null` (simple tirage au hasard).
+ *
+ * @returns {?string} Nom de la dernière place, ou `null`.
+ */
+function lireDernierePlace() {
+  try {
+    return localStorage.getItem(CONFIG.ambiance.cleDernierePlace);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Retient la place affichée, pour en changer au prochain chargement.
+ * Sans mémoire du navigateur, on ne retient rien (sans conséquence).
+ *
+ * @param {string} nom - Nom de la place affichée.
+ */
+function retenirPlace(nom) {
+  try {
+    localStorage.setItem(CONFIG.ambiance.cleDernierePlace, nom);
+  } catch {
+    // Mémoire indisponible : le prochain tirage pourra redonner cette place.
+  }
+}
+
+// Une place différente à chaque chargement ; `?place=<nom>` en impose une.
+const place = choisirPlace(CONFIG.ambiance.places, {
+  nomDemande: new URLSearchParams(location.search).get('place'),
+  nomPrecedent: lireDernierePlace(),
+});
+retenirPlace(place.nom);
+
+/**
  * Charge la place photographiée, avec quelques nouvelles tentatives en cas
  * d'échec. Le marché reste visible sans elle (lumière d'ambiance de secours).
  *
@@ -31,7 +68,7 @@ ajouterSolOmbres(scene, CONFIG.ambiance);
  */
 async function chargerPlace(tentativesRestantes = 3) {
   try {
-    await chargerAmbiance(scene, CONFIG.ambiance);
+    await chargerAmbiance(scene, CONFIG.ambiance, place);
   } catch (erreur) {
     if (tentativesRestantes > 1) {
       await new Promise((resoudre) => setTimeout(resoudre, 500));

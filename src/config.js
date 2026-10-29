@@ -9,14 +9,57 @@
 export const CONFIG = Object.freeze({
   /** Place de marché pavée tout autour (Poly Haven, CC0). */
   ambiance: Object.freeze({
-    photoFond: './ressources/environnements/dresden_square_4k.jpg',
-    eclairageHdr: './ressources/environnements/dresden_square_1k.hdr',
-    /** Hauteur de l'appareil photo lors de la prise de vue (calage du sol). */
-    hauteurPrise: 1.7,
+    /**
+     * Places possibles : une est tirée au hasard à chaque chargement, jamais
+     * deux fois de suite la même. `?place=<nom>` dans l'adresse en impose
+     * une (pratique pour les réglages).
+     *
+     * - `hauteurPrise` : hauteur de l'appareil photo lors de la prise de vue
+     *   (calage du sol : trop petite, l'étal s'enfonce ; trop grande, il flotte).
+     * - `rotation` : rotation de la place autour du joueur, en radians
+     *   (tourne le plus beau côté de la place derrière l'étal).
+     */
+    places: Object.freeze([
+      Object.freeze({
+        nom: 'dresde',
+        photoFond: './ressources/environnements/dresden_square_4k.jpg',
+        eclairageHdr: './ressources/environnements/dresden_square_1k.hdr',
+        hauteurPrise: 1.7,
+        rotation: 0.4,
+      }),
+      Object.freeze({
+        nom: 'ulm',
+        photoFond: './ressources/environnements/ulmer_muenster_4k.jpg',
+        eclairageHdr: './ressources/environnements/ulmer_muenster_1k.hdr',
+        hauteurPrise: 1.7,
+        rotation: 0,
+      }),
+      Object.freeze({
+        nom: 'venise',
+        photoFond: './ressources/environnements/venetian_crossroads_4k.jpg',
+        eclairageHdr: './ressources/environnements/venetian_crossroads_1k.hdr',
+        hauteurPrise: 1.7,
+        rotation: 0,
+      }),
+      Object.freeze({
+        nom: 'furstenstein',
+        photoFond: './ressources/environnements/furstenstein_4k.jpg',
+        eclairageHdr: './ressources/environnements/furstenstein_1k.hdr',
+        hauteurPrise: 1.7,
+        rotation: 0,
+      }),
+      Object.freeze({
+        nom: 'rome',
+        photoFond: './ressources/environnements/piazza_martin_lutero_4k.jpg',
+        eclairageHdr: './ressources/environnements/piazza_martin_lutero_1k.hdr',
+        hauteurPrise: 1.7,
+        rotation: 0,
+      }),
+    ]),
+    /** Clé du navigateur qui retient la dernière place affichée. */
+    cleDernierePlace: 'market.dernierePlace',
     /** Rayon approximatif de la place. */
     rayonPiece: 40,
-    /** Rotation de la place autour du joueur, en radians. */
-    rotation: 0.4,
     intensiteEnvironnement: 1,
     couleurSecours: 0xc8ccd0,
     opaciteOmbreSol: 0.4,

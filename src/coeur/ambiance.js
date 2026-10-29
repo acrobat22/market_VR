@@ -40,30 +40,31 @@ export function ajouterSolOmbres(scene, reglages) {
  *
  * @param {THREE.Scene} scene - Scène à habiller.
  * @param {typeof import('../config.js').CONFIG.ambiance} reglages - Réglages de l'ambiance.
+ * @param {typeof import('../config.js').CONFIG.ambiance.places[number]} place - Place à afficher.
  * @returns {Promise<void>}
  */
-export async function chargerAmbiance(scene, reglages) {
+export async function chargerAmbiance(scene, reglages, place) {
   const [photo, eclairage] = await Promise.all([
-    new THREE.TextureLoader().loadAsync(reglages.photoFond),
-    new HDRLoader().loadAsync(reglages.eclairageHdr),
+    new THREE.TextureLoader().loadAsync(place.photoFond),
+    new HDRLoader().loadAsync(place.eclairageHdr),
   ]);
 
   // Éclairage : la pièce HDR sert d'environnement (reflets et lumière ambiante).
   eclairage.mapping = THREE.EquirectangularReflectionMapping;
   scene.environment = eclairage;
   scene.environmentIntensity = reglages.intensiteEnvironnement;
-  scene.environmentRotation.y = reglages.rotation;
+  scene.environmentRotation.y = place.rotation;
 
   // Décor : la photo (déjà retouchée façon photo) est affichée telle quelle.
   photo.colorSpace = THREE.SRGBColorSpace;
   photo.mapping = THREE.EquirectangularReflectionMapping;
   photo.anisotropy = 4;
-  const piece = new GroundedSkybox(photo, reglages.hauteurPrise, reglages.rayonPiece);
+  const piece = new GroundedSkybox(photo, place.hauteurPrise, reglages.rayonPiece);
   // Évite d'appliquer deux fois le rendu « appareil photo ».
   piece.material.toneMapped = false;
   // Le sol de la photo est à -hauteur : on le ramène au niveau du sol réel.
-  piece.position.y = reglages.hauteurPrise - 0.01;
-  piece.rotation.y = reglages.rotation;
+  piece.position.y = place.hauteurPrise - 0.01;
+  piece.rotation.y = place.rotation;
   piece.name = 'piece';
   scene.add(piece);
   scene.background = null;

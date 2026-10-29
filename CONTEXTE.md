@@ -22,7 +22,7 @@ les briques techniques et les règles d'accessibilité.
 | Technologie | WebXR + Three.js 0.186.1, **sans compilation** (modules ES, *import map*, `vendor/`) |
 | Entrée | **Suivi des mains**, un seul geste : le **pincement** ; **mode sans casque** à la souris pour tester |
 | Graphisme | **Réaliste et très détaillé** : objets **photographiés** (photogrammétrie Poly Haven, CC0), à l'échelle réelle |
-| Décor | **Place de Dresde** (panorama 360° « dresden_square », Poly Haven, CC0) — choix confirmé le 2026-10-29 |
+| Décor | **5 places 360°** (Poly Haven, CC0) : Dresde « dresden_square », Ulm « ulmer_muenster », Venise « venetian_crossroads », Fürstenstein « furstenstein », Rome « piazza_martin_lutero ». **Tirée au hasard à chaque chargement, jamais deux fois de suite** (dernière place retenue par `localStorage`) ; `?place=<nom>` en impose une pour les réglages — décidé le 2026-10-29 |
 | Étal | Construit par le code (comptoir, poteaux, auvent rayé rouge et crème, étagère) avec bois et toile CC0, garni des modèles photographiés |
 | Rangement des denrées | **Pas linéaire** : rangs en léger arc tourné vers le joueur, petits écarts d'angle et de position, cagettes du fond **inclinées** et **rehaussées** à des hauteurs variées, fruits en **tas bombés**, quelques fruits « échappés » sur le comptoir |
 | Liste de courses | **Tirée au hasard** à chaque partie (4 à 6 articles, jamais de doublon) |
@@ -33,7 +33,8 @@ les briques techniques et les règles d'accessibilité.
 ## 3. Ce qui est fait (étapes 1 et 2)
 
 **Étape 1 — Socle** ✅
-- Dossier `market/`, **dépôt git initialisé** (branche `main`), **rien n'est encore commité**.
+- Dossier `market/`, dépôt git publié sur GitHub : `git@github.com:acrobat22/market_VR.git`
+  (premier commit `2dd8045` sur `main`, le 2026-10-29).
 - Modules repris de `construction` (branche `main`) : `coeur/sessionXR.js`,
   `coeur/qualiteAdaptative.js`, `coeur/ambiance.js`, `entrees/` (mains,
   détecteur de pincement, souris), `interface/` (sons, bouton 3D, icônes,
@@ -58,7 +59,14 @@ les briques techniques et les règles d'accessibilité.
 - `coeur/scene.js` : soleil voilé avec ombres douces + **lumière d'ambiance de
   secours** (la scène reste lisible si la photo de la place ne charge pas).
 - La place est chargée avec 3 tentatives (`main.js`).
-- **39 tests** `node --test` passent.
+
+**Fonds aléatoires** ✅ (branche `fonctionnalite/fonds-aleatoires`, réglages à valider à l'œil)
+- `coeur/choixPlace.js` : choix de la place (imposée par `?place=`, sinon au
+  hasard en écartant la précédente), testé.
+- `config.js` → `ambiance.places` : chaque place a sa photo, son HDR, sa
+  `hauteurPrise` (calage du sol) et sa `rotation`. Les 4 nouvelles places sont
+  à **1,7 m / rotation 0** par défaut : **à ajuster** avec `?place=<nom>`.
+- **46 tests** `node --test` passent.
 
 ## 4. Disposition (joueur assis à l'origine, face à -z)
 
@@ -101,16 +109,15 @@ Plan envisagé (à présenter et faire valider) :
   chargée (les tentatives réessaient le modèle entier, pas une texture isolée
   en échec). À vérifier dans Chrome.
 - **Bois très clair** au soleil sur une vue de trois quarts : à vérifier.
-- Poids des ressources : ~37 Mo (modèles 29 Mo en 1k). Fluidité en casque à
+- Poids des ressources : ~55 Mo dans le dépôt (modèles 29 Mo en 1k, 5 places
+  ~4 Mo chacune), mais une seule place téléchargée par chargement. Fluidité en casque à
   mesurer (ombres, nombre d'objets).
 
 ## 7. Autres places 360° libres de droits (CC0, Poly Haven), si besoin
 
-`ulmer_muenster` (grande place ensoleillée et cathédrale d'Ulm),
-`venetian_crossroads` (carrefour vénitien, façades colorées),
-`furstenstein` (cour pavée et château, ciel bleu),
-`piazza_martin_lutero` (parc romain avec fontaine, pins),
-`palermo_sidewalk` (ruelle fleurie ensoleillée), `schadowplatz`, `round_platform`.
+Déjà utilisées : `ulmer_muenster` (Ulm), `venetian_crossroads` (Venise),
+`furstenstein` (cour et château), `piazza_martin_lutero` (Rome).
+Encore disponibles : `palermo_sidewalk` (ruelle fleurie ensoleillée), `schadowplatz`, `round_platform`.
 La place Stanislas de Nancy n'existe qu'en **bande panoramique** (pas de 360°
 complet) : « Nancy Place Stanislas panoramic August 2021 », MartinD, CC BY-SA 4.0
 (citer l'auteur ; l'image modifiée reste CC BY-SA). Écartée pour l'instant.
@@ -121,7 +128,7 @@ complet) : « Nancy Place Stanislas panoramic August 2021 », MartinD, CC BY-SA 
 - Répondre et commenter le code **en français de France** ; JSDoc, noms lisibles.
 - **Une branche par fonctionnalité** (`fonctionnalite/…`) ; fusion dans `main`
   seulement après validation.
-- **Aucun `git push` sans demande** (le dépôt `market` n'a pas encore de remote).
+- **Aucun `git push` sans demande** (remote : `git@github.com:acrobat22/market_VR.git`).
 - Changements minimaux et ciblés ; pas de fonctionnalité non demandée.
 - Pour chaque problème : proposer l'approche optimale / pragmatique / architecturale, avec une recommandation.
 - Tenir à jour `README.md`, `CHANGELOG.md` et ce `CONTEXTE.md`.

@@ -8,6 +8,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 ## [Non publié]
 
 ### Ajouté
+- 2026-10-29 — Fonds aléatoires : 4 nouvelles places 360° (Ulm, Venise,
+  Fürstenstein, Rome ; Poly Haven CC0) en plus de Dresde. Une place est tirée
+  au hasard à chaque chargement, jamais deux fois de suite la même (dernière
+  place retenue par le navigateur). Paramètre `?place=<nom>` pour imposer une
+  place lors des réglages. 7 tests de plus (46 au total).
 - 2026-10-29 — Étape 2 (décor) : place de Dresde (panorama 360°, Poly Haven
   CC0) ; étal construit par le code (comptoir en planches, gradin, poteaux,
   auvent rayé rouge et crème avec lambrequin festonné, étagère) ; 12 articles

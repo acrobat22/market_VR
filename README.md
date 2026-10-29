@@ -16,7 +16,7 @@ Le contexte complet, les décisions et l'état d'avancement sont dans
 | Étape | Contenu | État |
 |---|---|---|
 | 1 | Socle (projet, modules communs, tirage de la liste) | ✅ |
-| 2 | Décor : place de Dresde, étal garni d'objets photographiés | ✅ à valider |
+| 2 | Décor : place tirée au hasard parmi 5, étal garni d'objets photographiés | ✅ à valider |
 | 3 | Jeu : ardoise, saisie, panier, articles cochés, réussite | à faire |
 
 ## Structure
@@ -29,12 +29,13 @@ vendor/three/              Three.js 0.186.1 (copie locale, licence MIT)
 vendor/webxr-input-profiles/  Modèles 3D des mains (licence MIT)
 ressources/modeles/        Modèles 3D photographiés, glTF 1k (Poly Haven, CC0)
 ressources/textures/       Bois « rough_wood », toile « rough_linen » (Poly Haven, CC0)
-ressources/environnements/ Place de Dresde « dresden_square » (Poly Haven, CC0)
+ressources/environnements/ 5 places 360° : Dresde, Ulm, Venise, Fürstenstein, Rome (Poly Haven, CC0)
 src/
   main.js                  Crée les modules et les relie
   config.js                Tous les réglages ajustables
   coeur/scene.js           Scène, caméra, rendu, soleil voilé, lumière de secours
   coeur/ambiance.js        Place photographiée (sol projeté + éclairage HDR)
+  coeur/choixPlace.js      Logique pure : choix de la place (au hasard, jamais deux fois de suite)
   coeur/sessionXR.js       Démarrage et fin de la session WebXR
   coeur/qualiteAdaptative.js       Logique pure : baisse la qualité si l'affichage ralentit
   entrees/                 Mains, détecteur de pincement, souris (repris de « construction »)
@@ -59,6 +60,11 @@ Ouvrir ensuite <http://localhost:8000>. Pour tester sur le Quest :
 `adb reverse tcp:8000 tcp:8000`, puis <http://localhost:8000> dans le
 navigateur du casque (suivi des mains activé).
 
+Une place différente est affichée à chaque chargement. Pour en imposer une
+(réglages de `hauteurPrise` et `rotation` dans `src/config.js`), ajouter
+`?place=` à l'adresse : `dresde`, `ulm`, `venise`, `furstenstein` ou `rome`,
+par exemple <http://localhost:8000/?place=venise>.
+
 ## Tests
 
 ```sh
@@ -69,4 +75,4 @@ node --test
 
 - Code : [MIT](LICENSE).
 - Three.js et modèles des mains : MIT (voir `vendor/`).
-- Modèles 3D, textures et place de Dresde : [Poly Haven](https://polyhaven.com/license), CC0 (domaine public).
+- Modèles 3D, textures et places 360° : [Poly Haven](https://polyhaven.com/license), CC0 (domaine public).
