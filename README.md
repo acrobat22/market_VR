@@ -17,7 +17,7 @@ Le contexte complet, les décisions et l'état d'avancement sont dans
 |---|---|---|
 | 1 | Socle (projet, modules communs, tirage de la liste) | ✅ |
 | 2 | Décor : place tirée au hasard parmi 5, étal garni d'objets photographiés | ✅ à valider |
-| 3 | Jeu : ardoise, saisie, panier, articles cochés, réussite | en cours : saisie et retour à la place faits |
+| 3 | Jeu : ardoise, saisie, panier, articles cochés, réussite | en cours : saisie, ardoise et panier faits ; reste la réussite |
 
 ## Structure
 
@@ -43,11 +43,14 @@ src/
   marche/articles.js       Les 12 articles vendus et leurs modèles 3D
   marche/modeles3D.js      Chargement des modèles (tentatives, éléments séparables)
   marche/matieres.js       Bois et toile réalistes, préchargés
+  marche/ardoise.js        Ardoise de la liste, suspendue sous l'auvent (cases cochées et barrées)
   marche/etal.js           L'étal : comptoir, auvent, cagettes, corbeilles, panier, décor
   marche/ombreContact.js   Ombre douce au pied des objets
   jeu/listeCourses.js      Logique pure : tirage de la liste au hasard
   jeu/saisie.js            Saisie et déplacement des objets par pincement (repris de « construction »)
-  jeu/exemplaire.js        Article saisissable : survol, retour en douceur à sa place
+  jeu/exemplaire.js        Article saisissable : survol, déplacement en douceur (place ou panier)
+  jeu/partie.js            Logique pure : liste en cours, articles cochés, fin de partie
+  jeu/panier.js            Logique pure : un article lâché tombe-t-il dans le panier ?
   jeu/mouvement.js         Logique pure : adoucissement et interpolation des mouvements
 tests/                     Tests des fonctions pures (node --test)
 ```

@@ -8,6 +8,17 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 ## [Non publié]
 
 ### Ajouté
+- 2026-10-29 — Étape 3b (jeu) : liste de 4 à 6 articles tirée au hasard et
+  écrite sur une ardoise suspendue sous l'auvent ; un article de la liste
+  lâché au-dessus du panier s'y pose et se coche (case ✔ et nom barré, son
+  doux) ; tout autre article retourne à sa place. 10 tests de plus (56 au total).
+
+### Corrigé
+- 2026-10-29 — Souris : l'article tenu suit la surface sous le curseur au lieu
+  d'un plan horizontal qui le faisait flotter devant le panier (dépôt
+  impossible, article grossi, citrons sous leur cagette).
+- Ardoise remontée (elle masquait le rang arrière), caméra de l'aperçu relevée ;
+  avocat ramené à une taille réaliste.
 - 2026-10-29 — Étape 3a (jeu) : page d'accueil complète (« Comment jouer »,
   sons doux + « Écouter », « Essayer sans casque ») ; on prend les articles de
   l'étal par pincement ou à la souris (l'article survolé grossit un peu) ;

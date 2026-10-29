@@ -4,11 +4,12 @@
  * C'est le seul endroit qui connaît tous les modules (inversion des
  * dépendances) : chaque module reçoit ici ce dont il a besoin.
  *
- * Étape 3 (en cours) : on prend les articles de l'étal (pincement ou
- * souris) ; lâché, un article retourne doucement à sa place.
+ * Étape 3 (en cours) : une liste est tirée au hasard et écrite sur l'ardoise ;
+ * on prend les articles de l'étal (pincement ou souris). Lâché dans le panier,
+ * un article de la liste y reste et se coche ; sinon, il retourne à sa place.
  */
 
-import { Box3 } from 'three';
+import { Box3, Vector3 } from 'three';
 
 import { CONFIG } from './config.js';
 import { creerEnvironnement, creerRendu } from './coeur/scene.js';
@@ -19,11 +20,15 @@ import { ARTICLES } from './marche/articles.js';
 import { BibliothequeModeles } from './marche/modeles3D.js';
 import { prechargerMatieres } from './marche/matieres.js';
 import { construireEtal } from './marche/etal.js';
+import { Ardoise } from './marche/ardoise.js';
 import { Mains } from './entrees/mains.js';
 import { DetecteurPincement } from './entrees/detecteurPincement.js';
 import { Souris } from './entrees/souris.js';
 import { GestionnaireSaisie } from './jeu/saisie.js';
 import { Exemplaire } from './jeu/exemplaire.js';
+import { tirerListe } from './jeu/listeCourses.js';
+import { Partie } from './jeu/partie.js';
+import { estAuDessusDuPanier } from './jeu/panier.js';
 import { ModeSansCasque } from './interface/modeSansCasque.js';
 import { Sons } from './interface/sons.js';
 
@@ -132,12 +137,49 @@ document.addEventListener('click', () => sons.reveiller());
 // Temps de la dernière image, utilisé lors des pincements.
 let tempsCourant = 0;
 
-// Hauteur du bord du panier : à la souris, l'article tenu glisse au-dessus.
-const hauteurBordPanier = etal.panier
-  ? new Box3().setFromObject(etal.panier).max.y
-  : etal.centrePanier.y;
-/** Hauteur du plan de glissement de la souris, fixée à chaque prise. */
-let hauteurGlissement = hauteurBordPanier + CONFIG.souris.hauteurLevee;
+// Liste de courses tirée au hasard (4 à 6 articles), écrite sur l'ardoise.
+const { tailleMinimale, tailleMaximale } = CONFIG.liste;
+const partie = new Partie(tirerListe(ARTICLES,
+  tailleMinimale + Math.floor(Math.random() * (tailleMaximale - tailleMinimale + 1))));
+const ardoise = new Ardoise(CONFIG.ardoise);
+ardoise.afficher(partie.lignes);
+scene.add(ardoise.objet3D);
+
+// Panier : zone où un article lâché compte comme déposé (marge généreuse).
+const { centrePanier } = etal;
+const boitePanier = etal.panier
+  ? new Box3().setFromObject(etal.panier)
+  : new Box3().setFromCenterAndSize(centrePanier, new Vector3(0.38, 0.24, 0.3));
+const hauteurBordPanier = boitePanier.max.y;
+const taillePanier = boitePanier.getSize(new Vector3());
+/** @type {import('./jeu/panier.js').ZonePanier} */
+const zonePanier = {
+  centre: centrePanier,
+  demiLargeur: taillePanier.x / 2 + CONFIG.panier.margeDepose,
+  demiProfondeur: taillePanier.z / 2 + CONFIG.panier.margeDepose,
+  hauteurMaximale: hauteurBordPanier + CONFIG.panier.hauteurDepose,
+};
+
+/**
+ * Lâché au-dessus du panier, un article de la liste y entre et se coche ;
+ * sinon (hors liste, déjà coché, ou lâché ailleurs), il retourne à sa place.
+ *
+ * @param {Exemplaire} exemplaire - Article qui vient d'être lâché.
+ */
+function surArticleLache(exemplaire) {
+  const centre = new Box3().setFromObject(exemplaire.objet3D).getCenter(new Vector3());
+  if (!estAuDessusDuPanier(centre, zonePanier) || !partie.deposer(exemplaire.idArticle)) {
+    exemplaire.renvoyer(tempsCourant);
+    return;
+  }
+  const { places } = CONFIG.panier;
+  const place = places[(partie.nombreCochees - 1) % places.length];
+  const fond = new Vector3(centrePanier.x + place.x, centrePanier.y + CONFIG.panier.epaisseurFond, centrePanier.z + place.z);
+  exemplaire.estDansPanier = true;
+  exemplaire.deplacerVers(exemplaire.positionPourPoserSur(fond), tempsCourant);
+  sons.jouerAccrochage();
+  ardoise.afficher(partie.lignes);
+}
 
 // Chaque fruit ou pain de l'étal devient saisissable.
 const saisie = new GestionnaireSaisie(CONFIG.saisie);
@@ -155,18 +197,14 @@ const ecouteursPincement = {
   surDebutPincement: (cote, point, options) => {
     if (saisie.saisir(cote, point, options)) {
       sons.jouerSaisie();
-      // À la souris, l'article glisse au-dessus du panier ET de sa cagette :
-      // sinon un article posé plus haut que le panier plongerait sous sa cagette.
-      const hautArticle = new Box3().setFromObject(saisie.prises.get(cote).objet.objet3D).max.y;
-      hauteurGlissement = Math.max(hauteurBordPanier, hautArticle) + CONFIG.souris.hauteurLevee;
     }
   },
   surFinPincement: (cote) => {
     const exemplaire = saisie.relacher(cote);
     if (exemplaire) {
-      // Pendant son retour, l'article ne peut pas être repris.
+      // Pendant son déplacement, l'article ne peut pas être repris.
       saisie.retirerObjet(exemplaire);
-      exemplaire.renvoyer(tempsCourant);
+      surArticleLache(exemplaire);
     }
   },
 };
@@ -185,7 +223,10 @@ const souris = new Souris({
   scene,
   objetsTenus: () => saisie.objetsTenus(),
   ecouteurs: ecouteursPincement,
-  hauteurCible: () => hauteurGlissement,
+  // Pas de plan de glissement : l'article tenu suit la surface sous le curseur
+  // (cagettes, comptoir, fond du panier), à sa vraie distance. Au-dessus du
+  // panier, il est donc vraiment au-dessus du panier.
+  hauteurCible: () => null,
   reglages: CONFIG.souris,
 });
 
@@ -215,8 +256,8 @@ renderer.setAnimationLoop((temps) => {
   const pointsDePincement = new Map([...mains.pointsDePincement, ...souris.pointsDePincement]);
   saisie.mettreAJour(pointsDePincement);
   for (const exemplaire of exemplaires) {
-    // Revenu à sa place : l'article peut de nouveau être pris.
-    if (exemplaire.mettreAJour(temps)) {
+    // Revenu à sa place : l'article peut de nouveau être pris. Dans le panier, il y reste.
+    if (exemplaire.mettreAJour(temps) && !exemplaire.estDansPanier) {
       saisie.ajouterObjet(exemplaire);
     }
   }

@@ -30,7 +30,8 @@ export const ARTICLES = Object.freeze([
   { id: 'citron', nom: 'Citrons', modele: 'lemon', quantite: 9 },
   { id: 'citron-vert', nom: 'Citrons verts', modele: 'food_lime_01', quantite: 12 },
   { id: 'kiwi', nom: 'Kiwis', modele: 'food_kiwi_01', quantite: 12 },
-  { id: 'avocat', nom: 'Avocats', modele: 'food_avocado_01', quantite: 6 },
+  // Le modèle mesure 14 cm de haut : ramené à ~10,5 cm, comme un vrai avocat.
+  { id: 'avocat', nom: 'Avocats', modele: 'food_avocado_01', quantite: 6, echelle: 0.75 },
   { id: 'grenade', nom: 'Grenades', modele: 'food_pomegranate_01', quantite: 6 },
   { id: 'bananes', nom: 'Bananes', modele: 'bananas', quantite: 1, elements: ['bananas_bunch'] },
   { id: 'patate-douce', nom: 'Patates douces', modele: 'sweet_potato', quantite: 9 },

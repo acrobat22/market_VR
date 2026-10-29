@@ -88,8 +88,8 @@ export const CONFIG = Object.freeze({
    */
   camera: Object.freeze({
     position: Object.freeze({ x: 0, y: 1.32, z: 0.35 }),
-    visee: Object.freeze({ x: 0, y: 0.95, z: -0.85 }),
-    champDeVision: 62,
+    visee: Object.freeze({ x: 0, y: 1.03, z: -0.85 }),
+    champDeVision: 66,
   }),
 
   /** Étal : comptoir, structure et auvent. */
@@ -137,6 +137,43 @@ export const CONFIG = Object.freeze({
   /** Panier du joueur, posé au centre du rang avant. */
   panier: Object.freeze({
     modele: 'wicker_basket_01',
+    /** Marge autour du panier où un article lâché compte quand même (généreuse). */
+    margeDepose: 0.05,
+    /** Un article lâché à plus de cette hauteur au-dessus du bord n'y tombe pas. */
+    hauteurDepose: 0.3,
+    /** Épaisseur du fond du panier : les articles se posent dessus. */
+    epaisseurFond: 0.02,
+    /**
+     * Places des articles dans le panier (décalages depuis son centre), dans
+     * l'ordre d'arrivée : deux rangées de trois.
+     */
+    places: Object.freeze([
+      Object.freeze({ x: -0.1, z: -0.055 }),
+      Object.freeze({ x: 0.1, z: 0.055 }),
+      Object.freeze({ x: 0, z: -0.055 }),
+      Object.freeze({ x: -0.1, z: 0.055 }),
+      Object.freeze({ x: 0.1, z: -0.055 }),
+      Object.freeze({ x: 0, z: 0.055 }),
+    ]),
+  }),
+
+  /** Liste de courses : nombre d'articles tirés au hasard (bornes incluses). */
+  liste: Object.freeze({
+    tailleMinimale: 4,
+    tailleMaximale: 6,
+  }),
+
+  /**
+   * Ardoise de la liste, suspendue à la traverse avant de l'auvent. Assez
+   * basse pour être vue sans lever la tête (et dans l'aperçu à la souris),
+   * assez haute pour ne pas cacher le rang arrière.
+   */
+  ardoise: Object.freeze({
+    largeur: 0.7,
+    hauteur: 0.32,
+    position: Object.freeze({ x: 0, y: 1.4, z: -0.36 }),
+    /** Hauteur de la traverse où sont attachées les cordelettes. */
+    hauteurAccroche: 1.93,
   }),
 
   /** Paniers ronds en osier aux extrémités du rang avant (pains). */
@@ -192,8 +229,8 @@ export const CONFIG = Object.freeze({
 
   /** Mode « Essayer sans casque » : la souris remplace la main. */
   souris: Object.freeze({
-    /** Pendant une prise, l'article glisse à cette hauteur au-dessus du panier et de sa cagette (le plus haut des deux). */
-    hauteurLevee: 0.08,
+    /** Pendant une prise, l'article survole la surface visée à cette hauteur. */
+    hauteurLevee: 0.06,
   }),
 
   saisie: Object.freeze({

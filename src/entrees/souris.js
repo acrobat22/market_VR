@@ -20,7 +20,7 @@ import { Plane, Raycaster, Vector2, Vector3 } from 'three';
 const COTE_SOURIS = 'right';
 
 /** Noms des objets que le curseur traverse (décor, aides visuelles). */
-const NOMS_IGNORES = new Set(['piece', 'maquette-fantome', 'carte-progression', 'ombre-contact', 'lampe']);
+const NOMS_IGNORES = new Set(['piece', 'maquette-fantome', 'carte-progression', 'ombre-contact', 'lampe', 'ardoise']);
 
 /**
  * Pilote le pincement à la souris sur le canevas.

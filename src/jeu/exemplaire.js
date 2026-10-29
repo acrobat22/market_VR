@@ -1,11 +1,11 @@
 /**
  * @file Exemplaire d'un article : un fruit (ou un pain) de l'étal que l'on
- * peut prendre, et qui retourne doucement à sa place quand on le lâche.
+ * peut prendre ; lâché, il va doucement dans le panier ou retourne à sa place.
  *
  * Respecte l'interface `ObjetSaisissable` de `saisie.js`.
  */
 
-import { Quaternion } from 'three';
+import { Box3, Quaternion, Vector3 } from 'three';
 
 import { adoucir, interpoler } from './mouvement.js';
 
@@ -35,10 +35,13 @@ export class Exemplaire {
     this.echelleOrigine = objet3D.scale.clone();
 
     /**
-     * Retour en cours vers la place d'origine, ou `null`.
-     * @type {{ debut: number, position: import('three').Vector3, orientation: Quaternion } | null}
+     * Déplacement en cours (retour à sa place ou arrivée dans le panier), ou `null`.
+     * @type {{ debut: number, position: Vector3, orientation: Quaternion, arrivee: Vector3 } | null}
      */
     this.retour = null;
+
+    /** `true` une fois l'article accepté dans le panier (il n'en bouge plus). */
+    this.estDansPanier = false;
   }
 
   /**
@@ -56,26 +59,58 @@ export class Exemplaire {
    * @param {number} temps - Instant courant, en ms.
    */
   renvoyer(temps) {
+    this.deplacerVers(this.positionOrigine, temps);
+  }
+
+  /**
+   * Lance un déplacement en douceur (en arc) vers une position ; l'objet
+   * reprend en chemin son orientation d'origine.
+   *
+   * @param {Vector3} arrivee - Position d'arrivée (repère de la scène).
+   * @param {number} temps - Instant courant, en ms.
+   */
+  deplacerVers(arrivee, temps) {
     this.retour = {
       debut: temps,
       position: this.objet3D.position.clone(),
       orientation: this.objet3D.quaternion.clone(),
+      arrivee: arrivee.clone(),
     };
   }
 
   /**
-   * Fait avancer le retour. À appeler une fois par image.
+   * Position à donner à l'objet (dans son orientation d'origine) pour que le
+   * centre de sa base repose sur un point : les modèles n'ont pas tous leur
+   * origine au même endroit (base ou centre).
+   *
+   * @param {Vector3} point - Point d'appui, par exemple le fond du panier.
+   * @returns {Vector3}
+   */
+  positionPourPoserSur(point) {
+    const positionActuelle = this.objet3D.position.clone();
+    const orientationActuelle = this.objet3D.quaternion.clone();
+    this.objet3D.position.set(0, 0, 0);
+    this.objet3D.quaternion.copy(this.orientationOrigine);
+    const boite = new Box3().setFromObject(this.objet3D);
+    this.objet3D.position.copy(positionActuelle);
+    this.objet3D.quaternion.copy(orientationActuelle);
+    const centre = boite.getCenter(new Vector3());
+    return new Vector3(point.x - centre.x, point.y - boite.min.y, point.z - centre.z);
+  }
+
+  /**
+   * Fait avancer le déplacement en cours. À appeler une fois par image.
    *
    * @param {number} temps - Instant courant, en ms.
-   * @returns {boolean} `true` à l'image où l'objet retrouve sa place.
+   * @returns {boolean} `true` à l'image où l'objet arrive (à sa place ou dans le panier).
    */
   mettreAJour(temps) {
     if (!this.retour) {
       return false;
     }
     const progression = adoucir((temps - this.retour.debut) / this.reglages.dureeRetour);
-    const point = interpoler(this.retour.position, this.positionOrigine, progression);
-    // Trajet en arc : l'objet remonte un peu, puis redescend dans sa cagette.
+    const point = interpoler(this.retour.position, this.retour.arrivee, progression);
+    // Trajet en arc : l'objet remonte un peu, puis redescend à sa place.
     const arc = Math.sin(progression * Math.PI) * this.reglages.hauteurArcRetour;
     this.objet3D.position.set(point.x, point.y + arc, point.z);
     this.objet3D.quaternion.slerpQuaternions(this.retour.orientation, this.orientationOrigine, progression);

@@ -66,7 +66,7 @@ les briques techniques et les règles d'accessibilité.
 - `config.js` → `ambiance.places` : chaque place a sa photo, son HDR, sa
   `hauteurPrise` (calage du sol) et sa `rotation`. Les 4 nouvelles places sont
   à **1,7 m / rotation 0** par défaut : **à ajuster** avec `?place=<nom>`.
-- **46 tests** `node --test` passent.
+- **46 tests** `node --test` passent (56 avec l'étape 3b).
 
 **Étape 3 — Jeu** (branche `fonctionnalite/jeu`, 3 livraisons validées une à une)
 - Décisions du 2026-10-29 : **un seul exemplaire** par article de la liste ;
@@ -76,11 +76,18 @@ les briques techniques et les règles d'accessibilité.
   (repris tel quel), `jeu/exemplaire.js` (chaque fruit est rattaché à la scène
   au démarrage, sans bouger : la saisie travaille dans le repère de la scène
   même pour les cagettes inclinées ; survol = grossissement ; retour en arc,
-  0,7 s, non saisissable pendant le retour). À la souris, l'article tenu glisse
-  au-dessus du plus haut des deux : bord du panier ou haut de l'article au
-  moment de la prise (sinon les citrons, dans la cagette la plus rehaussée,
-  plongeaient sous leur cagette).
-- (b) Ardoise, panier, articles cochés — à faire.
+  0,7 s, non saisissable pendant le retour). À la souris, l'article tenu **suit la
+  surface sous le curseur** (soulevé de 6 cm), à sa vraie distance : un plan
+  de glissement horizontal le faisait flotter 40 à 60 cm devant le panier
+  (dépôt impossible, article énorme, citrons qui plongeaient).
+- **(b) Ardoise, panier, articles cochés** ✅ (à valider à l'œil) :
+  `jeu/partie.js` (`deposer(id)` → accepté/refusé, `estTerminee`),
+  `jeu/panier.js` (zone généreuse : boîte du panier + 5 cm, jusqu'à 30 cm
+  au-dessus du bord), `marche/ardoise.js` (0,70 × 0,32 m, à z = −0,36 sous la
+  traverse avant, de 1,24 à 1,56 m ; caméra souris relevée (visée y = 1,03,
+  champ 66°) pour la voir en entier sans cacher le rang arrière ; 2 colonnes
+  de 3). Avocat ramené à l'échelle 0,75 (modèle de 14 cm). Un article accepté se pose au fond du
+  panier à l'une des 6 places de `CONFIG.panier.places` et n'en bouge plus.
 - (c) Réussite et « Rejouer » — à faire.
 
 ## 4. Disposition (joueur assis à l'origine, face à -z)
@@ -117,6 +124,13 @@ Plan envisagé (à présenter et faire valider) :
 
 ## 6. Points à vérifier / limites connues
 
+- **Vérifier le jeu sans casque** : Chrome sans affichage piloté par le
+  protocole DevTools (script Node + WebSocket intégré) donne de vraies
+  captures et simule la souris ; il se bloque parfois (relancer un profil neuf).
+- **« Multiple instances of Three.js »** dans la console : absent d'un Chrome
+  neuf ; vient probablement d'une extension (émulateur WebXR, outils Three.js)
+  qui charge sa propre copie. À confirmer en navigation privée.
+
 - **Chrome sans affichage** (outil de capture) charge mal les ressources et
   produit très peu d'images : faux défauts possibles (bois ou fruits blancs,
   fondus incomplets). Toujours confirmer dans un vrai navigateur.
@@ -124,10 +138,6 @@ Plan envisagé (à présenter et faire valider) :
   chargée (les tentatives réessaient le modèle entier, pas une texture isolée
   en échec). À vérifier dans Chrome.
 - **Bois très clair** au soleil sur une vue de trois quarts : à vérifier.
-- **Souris** : un article tiré vers le joueur grossit beaucoup (perspective :
-  le plan de glissement des articles du rang arrière est haut, ~1,08 m pour
-  l'œil à 1,32 m). Correction possible : borner au bord avant du comptoir —
-  laissée de côté le 2026-10-29 à la demande de l'utilisatrice.
 - Prendre un fruit **sous** d'autres laisse ceux du dessus en l'air (pas de
   physique) ; la saisie vise le plus proche, donc le plus souvent ceux du dessus.
 - Poids des ressources : ~55 Mo dans le dépôt (modèles 29 Mo en 1k, 5 places
