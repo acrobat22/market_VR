@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Faire son marché</title>
+  <meta name="description" content="Jeu de courses au marché en réalité virtuelle, pour le casque Meta Quest.">
+  <link rel="stylesheet" href="./styles/accueil.css">
+
+  <!-- Three.js est copié dans le projet (vendor/) : aucune compilation, aucun CDN. -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./vendor/three/build/three.module.js",
+        "three/addons/": "./vendor/three/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module" src="./src/main.js"></script>
+</head>
+<body>
+  <!-- Aperçu 3D en arrière-plan (le canevas est inséré par src/coeur/scene.js). -->
+  <div id="scene" class="scene"></div>
+
+  <main class="panneau" aria-labelledby="titre">
+    <h1 id="titre">Faire son marché</h1>
+    <p id="description">
+      Assis confortablement devant l’étal, remplissez votre panier en suivant
+      la liste de courses. Prenez tout votre temps : il n’y a ni chrono ni erreur possible.
+    </p>
+
+    <button id="bouton-vr" class="bouton-vr" type="button"
+            aria-describedby="description message-statut" disabled aria-busy="true">
+      Vérification du casque…
+    </button>
+
+    <p id="message-statut" class="message-statut" role="status" aria-live="polite"></p>
+
+    <noscript>
+      <p class="message-statut">Ce jeu a besoin de JavaScript pour fonctionner.</p>
+    </noscript>
+  </main>
+</body>
+</html>

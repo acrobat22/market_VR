@@ -1,0 +1,308 @@
+/*
+ * Page d'accueil : grands caractères, fond sombre, contraste ≥ 7:1.
+ * Contrastes vérifiés :
+ *   - texte #ffffff sur #111418           → 18,5:1
+ *   - bouton #111418 sur #ffe98a          → 15,2:1
+ *   - message #ffe98a sur #111418         → 15,2:1
+ *   - désactivé #c8ccd4 sur #111418       → 11,5:1
+ */
+
+:root {
+  --couleur-fond: #111418;
+  --couleur-texte: #ffffff;
+  --couleur-accent: #ffe98a;
+  --couleur-desactive: #c8ccd4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--couleur-fond);
+  color: var(--couleur-texte);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 1.375rem;
+  line-height: 1.5;
+}
+
+/* L'aperçu 3D occupe tout l'écran, derrière le panneau. */
+.scene {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+/* Panneau opaque : le texte ne dépend jamais du décor 3D pour être lisible. */
+.panneau {
+  position: relative;
+  z-index: 1;
+  max-width: 40rem;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: var(--couleur-fond);
+  border: 2px solid var(--couleur-accent);
+  border-radius: 1rem;
+}
+
+h1 {
+  margin-top: 0;
+  font-size: 2.5rem;
+  font-weight: 800;
+}
+
+.bouton-vr {
+  display: block;
+  width: 100%;
+  min-height: 4.5rem;
+  padding: 1rem 1.5rem;
+  font: inherit;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--couleur-fond);
+  background: var(--couleur-accent);
+  border: 3px solid var(--couleur-accent);
+  border-radius: 0.75rem;
+  cursor: pointer;
+}
+
+/* Contour de focus bien visible pour la navigation au clavier. */
+.bouton-vr:focus-visible {
+  outline: 4px solid var(--couleur-texte);
+  outline-offset: 4px;
+}
+
+/* État désactivé : signalé par le style ET par le texte du bouton. */
+.bouton-vr:disabled {
+  color: var(--couleur-desactive);
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--couleur-desactive);
+  cursor: not-allowed;
+}
+
+/* Choix du modèle : grandes cartes à boutons radio. */
+.choix-modele {
+  margin: 0 0 1.5rem;
+  padding: 0;
+  border: none;
+}
+
+.choix-modele legend {
+  margin-bottom: 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.liste-modeles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: 0.75rem;
+}
+
+.carte-modele {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  border: 3px solid var(--couleur-desactive);
+  border-radius: 0.9rem;
+  cursor: pointer;
+}
+
+.carte-modele img {
+  width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+}
+
+.carte-modele-nom {
+  font-weight: 800;
+}
+
+.carte-modele-pieces {
+  font-size: 1.125rem;
+}
+
+/* Choisie : bordure épaisse jaune pâle ET coche (jamais la couleur seule). */
+.carte-modele:has(input:checked) {
+  border: 6px solid var(--couleur-accent);
+  padding: calc(0.5rem - 3px);
+}
+
+.carte-modele:has(input:checked)::after {
+  content: "✔";
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  color: var(--couleur-fond);
+  background: var(--couleur-accent);
+  border-radius: 50%;
+  font-weight: 800;
+}
+
+/* Focus clavier bien visible sur la carte entière. */
+.carte-modele:has(input:focus-visible) {
+  outline: 4px solid var(--couleur-texte);
+  outline-offset: 4px;
+}
+
+/* Caché à l'écran mais lu par les lecteurs d'écran et utilisable au clavier. */
+.visuellement-cache {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+}
+
+.comment-jouer {
+  margin: 0 0 1.5rem;
+  padding-left: 1.75rem;
+}
+
+.comment-jouer li {
+  margin-bottom: 0.35rem;
+}
+
+/* L'attribut `hidden` l'emporte toujours sur les règles d'affichage ci-dessous. */
+[hidden] {
+  display: none !important;
+}
+
+/* Bouton secondaire : contour seul, même contraste que le texte. */
+.bouton-secondaire {
+  display: block;
+  width: 100%;
+  min-height: 3.5rem;
+  padding: 0.75rem 1.25rem;
+  font: inherit;
+  font-weight: 700;
+  color: var(--couleur-texte);
+  background: var(--couleur-fond);
+  border: 3px solid var(--couleur-texte);
+  border-radius: 0.75rem;
+  cursor: pointer;
+}
+
+.bouton-secondaire:focus-visible {
+  outline: 4px solid var(--couleur-accent);
+  outline-offset: 4px;
+}
+
+/* Case à cocher agrandie, facile à viser. */
+.option {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 1rem;
+  font-weight: 700;
+}
+
+.option input {
+  width: 1.75rem;
+  height: 1.75rem;
+  accent-color: var(--couleur-accent);
+}
+
+/* Petit bouton à côté d'une option (« Écouter »). */
+.bouton-petit {
+  min-height: 2.75rem;
+  margin-left: auto;
+  padding: 0.4rem 1rem;
+  font: inherit;
+  font-weight: 700;
+  color: var(--couleur-texte);
+  background: var(--couleur-fond);
+  border: 3px solid var(--couleur-texte);
+  border-radius: 0.6rem;
+  cursor: pointer;
+}
+
+.bouton-petit:focus-visible {
+  outline: 4px solid var(--couleur-accent);
+  outline-offset: 4px;
+}
+
+/* Inactif (sons coupés) : signalé par le style ET par l'attribut `disabled`. */
+.bouton-petit:disabled {
+  color: var(--couleur-desactive);
+  border-style: dashed;
+  border-color: var(--couleur-desactive);
+  cursor: not-allowed;
+}
+
+.option input:focus-visible {
+  outline: 4px solid var(--couleur-accent);
+  outline-offset: 4px;
+}
+
+.note {
+  margin-top: 0.5rem;
+  font-size: 1.125rem;
+}
+
+/* Barre d'aide du mode souris, en bas de l'écran, sur fond opaque. */
+.barre-aide {
+  position: fixed;
+  z-index: 1;
+  left: 1rem;
+  right: 1rem;
+  bottom: 1rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 1rem 1.25rem;
+  background: var(--couleur-fond);
+  border: 2px solid var(--couleur-accent);
+  border-radius: 1rem;
+}
+
+.barre-aide p {
+  flex: 1;
+  margin: 0;
+}
+
+.barre-aide .bouton-secondaire {
+  width: auto;
+  flex-shrink: 0;
+}
+
+.message-statut {
+  min-height: 1.5em;
+  color: var(--couleur-accent);
+  font-weight: 600;
+}
+
+/* Petits écrans : marges réduites. */
+@media (max-width: 40rem) {
+  .panneau {
+    margin: 1rem;
+    padding: 1.25rem;
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
+
+  .barre-aide {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

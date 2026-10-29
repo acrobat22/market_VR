@@ -1,0 +1,12 @@
+# Fichiers système macOS
+.DS_Store
+
+# Journaux de débogage (voir CONTEXTE.md)
+debug.log
+erreurs.log
+
+# Archives d’inspiration (non versionnées)
+*.zip
+
+# Images d’inspiration (droits d’auteur de tiers : ne jamais publier)
+imagesExemples/
