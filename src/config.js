@@ -168,6 +168,48 @@ export const CONFIG = Object.freeze({
 
   dossierModeles: './ressources/modeles/',
 
+  mains: Object.freeze({
+    /** « mesh » : mains réalistes, modèles copiés localement (licence MIT). */
+    profilAffichage: 'mesh',
+    cheminModeles: './vendor/webxr-input-profiles/generic-hand/',
+    /**
+     * Seuils de pincement (distance pouce–index), plus tolérants que ceux de
+     * Three.js (1,5 cm / 2,5 cm). L'écart entre les deux absorbe les tremblements.
+     */
+    pincement: Object.freeze({
+      seuilFermeture: 0.025,
+      seuilOuverture: 0.04,
+    }),
+  }),
+
+  sons: Object.freeze({
+    /**
+     * Volume général (0 à 1). Crête mesurée vers -7 dB : audible sur les
+     * haut-parleurs d'un portable comme dans le casque, sans saturer.
+     */
+    volume: 0.85,
+  }),
+
+  /** Mode « Essayer sans casque » : la souris remplace la main. */
+  souris: Object.freeze({
+    /** Pendant une prise, l'article glisse à cette hauteur au-dessus du panier et de sa cagette (le plus haut des deux). */
+    hauteurLevee: 0.08,
+  }),
+
+  saisie: Object.freeze({
+    /**
+     * Distance maximale entre le point de pincement et la surface d'un article
+     * pour pouvoir le saisir : zone volontairement généreuse.
+     */
+    rayonSaisie: 0.06,
+    /** Grossissement d'un article que la main peut prendre (retour de survol). */
+    grossissementSurvol: 1.12,
+    /** Durée du retour d'un article à sa place, en ms. */
+    dureeRetour: 700,
+    /** Hauteur de l'arc décrit pendant le retour, en m. */
+    hauteurArcRetour: 0.08,
+  }),
+
   session: Object.freeze({
     mode: 'immersive-vr',
     typeReferentiel: 'local-floor',

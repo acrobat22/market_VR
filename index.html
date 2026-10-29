@@ -29,6 +29,13 @@
       la liste de courses. Prenez tout votre temps : il n’y a ni chrono ni erreur possible.
     </p>
 
+    <h2 id="titre-comment-jouer">Comment jouer</h2>
+    <ol class="comment-jouer" aria-labelledby="titre-comment-jouer">
+      <li>Lisez la liste de courses sur l’ardoise.</li>
+      <li>Pincez un article avec le pouce et l’index pour le prendre.</li>
+      <li>Lâchez-le dans le panier. Un article qui n’est pas sur la liste retourne tout seul à sa place.</li>
+    </ol>
+
     <button id="bouton-vr" class="bouton-vr" type="button"
             aria-describedby="description message-statut" disabled aria-busy="true">
       Vérification du casque…
@@ -36,9 +43,38 @@
 
     <p id="message-statut" class="message-statut" role="status" aria-live="polite"></p>
 
+    <div class="option">
+      <input id="case-sons" type="checkbox" checked aria-describedby="description-sons">
+      <label for="case-sons">Sons doux</label>
+      <button id="bouton-ecouter" class="bouton-petit" type="button" aria-describedby="description-sons">
+        Écouter
+      </button>
+    </div>
+    <p id="description-sons" class="note">
+      Un léger son accompagne la prise des articles et leur arrivée dans le panier. Aucune voix.
+      « Écouter » permet de régler le volume avant de mettre le casque.
+    </p>
+
+    <button id="bouton-souris" class="bouton-secondaire" type="button" aria-describedby="description-souris">
+      Essayer sans casque
+    </button>
+    <p id="description-souris" class="note">
+      Sur ordinateur, la souris remplace la main : cliquez et glissez pour déplacer un article.
+    </p>
+
     <noscript>
       <p class="message-statut">Ce jeu a besoin de JavaScript pour fonctionner.</p>
     </noscript>
   </main>
+
+  <!-- Barre d'aide du mode souris (affichée à la place de l'accueil). -->
+  <section id="barre-aide" class="barre-aide" aria-label="Aide du mode souris" hidden>
+    <p>
+      Cliquez sur un article et glissez-le jusqu’au panier, puis relâchez.
+    </p>
+    <button id="bouton-retour" class="bouton-secondaire" type="button">
+      Revenir à l’accueil (Échap)
+    </button>
+  </section>
 </body>
 </html>

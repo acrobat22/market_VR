@@ -4,8 +4,11 @@
  * C'est le seul endroit qui connaît tous les modules (inversion des
  * dépendances) : chaque module reçoit ici ce dont il a besoin.
  *
- * Étape 2 : le décor (place, étal garni). Le jeu viendra à l'étape 3.
+ * Étape 3 (en cours) : on prend les articles de l'étal (pincement ou
+ * souris) ; lâché, un article retourne doucement à sa place.
  */
+
+import { Box3 } from 'three';
 
 import { CONFIG } from './config.js';
 import { creerEnvironnement, creerRendu } from './coeur/scene.js';
@@ -16,6 +19,13 @@ import { ARTICLES } from './marche/articles.js';
 import { BibliothequeModeles } from './marche/modeles3D.js';
 import { prechargerMatieres } from './marche/matieres.js';
 import { construireEtal } from './marche/etal.js';
+import { Mains } from './entrees/mains.js';
+import { DetecteurPincement } from './entrees/detecteurPincement.js';
+import { Souris } from './entrees/souris.js';
+import { GestionnaireSaisie } from './jeu/saisie.js';
+import { Exemplaire } from './jeu/exemplaire.js';
+import { ModeSansCasque } from './interface/modeSansCasque.js';
+import { Sons } from './interface/sons.js';
 
 const zoneMessage = document.getElementById('message-statut');
 
@@ -96,6 +106,95 @@ await Promise.all([
 
 const etal = construireEtal(CONFIG, bibliotheque);
 scene.add(etal.objet3D);
+// Positions à jour avant de sortir les articles de leurs cagettes.
+scene.updateMatrixWorld();
+
+// Sons doux : le contexte audio est réveillé au premier clic sur la page
+// (exigence des navigateurs), et la case « Sons doux » les active ou les coupe.
+const sons = new Sons(CONFIG.sons);
+const caseSons = document.getElementById('case-sons');
+sons.definirActifs(caseSons.checked);
+const boutonEcouter = document.getElementById('bouton-ecouter');
+caseSons.addEventListener('change', () => {
+  sons.definirActifs(caseSons.checked);
+  // « Écouter » n'a de sens que si les sons sont activés.
+  boutonEcouter.disabled = !caseSons.checked;
+  sons.reveiller();
+});
+boutonEcouter.disabled = !caseSons.checked;
+// Fait entendre la mélodie de réussite pour régler le volume avant la VR.
+boutonEcouter.addEventListener('click', () => {
+  sons.reveiller();
+  sons.jouerReussite();
+});
+document.addEventListener('click', () => sons.reveiller());
+
+// Temps de la dernière image, utilisé lors des pincements.
+let tempsCourant = 0;
+
+// Hauteur du bord du panier : à la souris, l'article tenu glisse au-dessus.
+const hauteurBordPanier = etal.panier
+  ? new Box3().setFromObject(etal.panier).max.y
+  : etal.centrePanier.y;
+/** Hauteur du plan de glissement de la souris, fixée à chaque prise. */
+let hauteurGlissement = hauteurBordPanier + CONFIG.souris.hauteurLevee;
+
+// Chaque fruit ou pain de l'étal devient saisissable.
+const saisie = new GestionnaireSaisie(CONFIG.saisie);
+const exemplaires = [...etal.emplacements.values()].flatMap(({ article, exemplaires: objets }) =>
+  objets.map((objet) => new Exemplaire(objet, article.id, scene, CONFIG.saisie)));
+for (const exemplaire of exemplaires) {
+  saisie.ajouterObjet(exemplaire);
+}
+
+/**
+ * Réactions aux pincements, partagées par les mains (VR) et la souris (sans casque).
+ * @type {import('./entrees/mains.js').EcouteursPincement}
+ */
+const ecouteursPincement = {
+  surDebutPincement: (cote, point, options) => {
+    if (saisie.saisir(cote, point, options)) {
+      sons.jouerSaisie();
+      // À la souris, l'article glisse au-dessus du panier ET de sa cagette :
+      // sinon un article posé plus haut que le panier plongerait sous sa cagette.
+      const hautArticle = new Box3().setFromObject(saisie.prises.get(cote).objet.objet3D).max.y;
+      hauteurGlissement = Math.max(hauteurBordPanier, hautArticle) + CONFIG.souris.hauteurLevee;
+    }
+  },
+  surFinPincement: (cote) => {
+    const exemplaire = saisie.relacher(cote);
+    if (exemplaire) {
+      // Pendant son retour, l'article ne peut pas être repris.
+      saisie.retirerObjet(exemplaire);
+      exemplaire.renvoyer(tempsCourant);
+    }
+  },
+};
+
+const mains = new Mains(
+  renderer,
+  scene,
+  CONFIG.mains,
+  () => new DetecteurPincement(CONFIG.mains.pincement),
+  ecouteursPincement,
+);
+
+const souris = new Souris({
+  canevas: renderer.domElement,
+  camera,
+  scene,
+  objetsTenus: () => saisie.objetsTenus(),
+  ecouteurs: ecouteursPincement,
+  hauteurCible: () => hauteurGlissement,
+  reglages: CONFIG.souris,
+});
+
+const modeSansCasque = new ModeSansCasque({
+  panneauAccueil: document.querySelector('.panneau'),
+  barreAide: document.getElementById('barre-aide'),
+  boutonEssayer: document.getElementById('bouton-souris'),
+  boutonRetour: document.getElementById('bouton-retour'),
+}, souris);
 
 const sessionXR = new SessionXR({
   renderer,
@@ -104,8 +203,22 @@ const sessionXR = new SessionXR({
   reglages: CONFIG.session,
 });
 sessionXR.initialiser();
+// En VR, ce sont les mains qui comptent : la souris est mise de côté.
+renderer.xr.addEventListener('sessionstart', () => modeSansCasque.desactiver());
 
-// Boucle de rendu : `setAnimationLoop` est obligatoire en WebXR.
-renderer.setAnimationLoop(() => {
+// Boucle de rendu : `setAnimationLoop` est obligatoire en WebXR
+// (elle suit la fréquence d'affichage du casque).
+renderer.setAnimationLoop((temps) => {
+  tempsCourant = temps;
+  mains.mettreAJour();
+  souris.mettreAJour();
+  const pointsDePincement = new Map([...mains.pointsDePincement, ...souris.pointsDePincement]);
+  saisie.mettreAJour(pointsDePincement);
+  for (const exemplaire of exemplaires) {
+    // Revenu à sa place : l'article peut de nouveau être pris.
+    if (exemplaire.mettreAJour(temps)) {
+      saisie.ajouterObjet(exemplaire);
+    }
+  }
   renderer.render(scene, camera);
 });

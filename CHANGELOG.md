@@ -8,6 +8,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 ## [Non publié]
 
 ### Ajouté
+- 2026-10-29 — Étape 3a (jeu) : page d'accueil complète (« Comment jouer »,
+  sons doux + « Écouter », « Essayer sans casque ») ; on prend les articles de
+  l'étal par pincement ou à la souris (l'article survolé grossit un peu) ;
+  lâché, un article retourne doucement à sa place en décrivant un arc.
 - 2026-10-29 — Fonds aléatoires : 4 nouvelles places 360° (Ulm, Venise,
   Fürstenstein, Rome ; Poly Haven CC0) en plus de Dresde. Une place est tirée
   au hasard à chaque chargement, jamais deux fois de suite la même (dernière

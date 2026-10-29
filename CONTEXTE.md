@@ -68,6 +68,21 @@ les briques techniques et les règles d'accessibilité.
   à **1,7 m / rotation 0** par défaut : **à ajuster** avec `?place=<nom>`.
 - **46 tests** `node --test` passent.
 
+**Étape 3 — Jeu** (branche `fonctionnalite/jeu`, 3 livraisons validées une à une)
+- Décisions du 2026-10-29 : **un seul exemplaire** par article de la liste ;
+  ardoise **suspendue sous l'auvent**, au centre ; logique de partie pure et
+  testée (`jeu/partie.js`), rendu de l'ardoise dans `marche/ardoise.js`.
+- **(a) Accueil, saisie, retour** ✅ (à valider à l'œil) : `jeu/saisie.js`
+  (repris tel quel), `jeu/exemplaire.js` (chaque fruit est rattaché à la scène
+  au démarrage, sans bouger : la saisie travaille dans le repère de la scène
+  même pour les cagettes inclinées ; survol = grossissement ; retour en arc,
+  0,7 s, non saisissable pendant le retour). À la souris, l'article tenu glisse
+  au-dessus du plus haut des deux : bord du panier ou haut de l'article au
+  moment de la prise (sinon les citrons, dans la cagette la plus rehaussée,
+  plongeaient sous leur cagette).
+- (b) Ardoise, panier, articles cochés — à faire.
+- (c) Réussite et « Rejouer » — à faire.
+
 ## 4. Disposition (joueur assis à l'origine, face à -z)
 
 ```
@@ -109,6 +124,12 @@ Plan envisagé (à présenter et faire valider) :
   chargée (les tentatives réessaient le modèle entier, pas une texture isolée
   en échec). À vérifier dans Chrome.
 - **Bois très clair** au soleil sur une vue de trois quarts : à vérifier.
+- **Souris** : un article tiré vers le joueur grossit beaucoup (perspective :
+  le plan de glissement des articles du rang arrière est haut, ~1,08 m pour
+  l'œil à 1,32 m). Correction possible : borner au bord avant du comptoir —
+  laissée de côté le 2026-10-29 à la demande de l'utilisatrice.
+- Prendre un fruit **sous** d'autres laisse ceux du dessus en l'air (pas de
+  physique) ; la saisie vise le plus proche, donc le plus souvent ceux du dessus.
 - Poids des ressources : ~55 Mo dans le dépôt (modèles 29 Mo en 1k, 5 places
   ~4 Mo chacune), mais une seule place téléchargée par chargement. Fluidité en casque à
   mesurer (ombres, nombre d'objets).
