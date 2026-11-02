@@ -144,23 +144,49 @@ export const CONFIG = Object.freeze({
     /** Épaisseur du fond du panier : les articles se posent dessus. */
     epaisseurFond: 0.02,
     /**
-     * Places des articles dans le panier (décalages depuis son centre), dans
-     * l'ordre d'arrivée : deux rangées de trois.
+     * Places des articles dans le panier (décalages depuis le centre du fond),
+     * dans l'ordre d'arrivée : deux rangées de trois, puis une seconde couche
+     * décalée posée par-dessus. Leur nombre fixe la contenance du panier : la
+     * liste ne demande jamais plus d'exemplaires au total.
      */
     places: Object.freeze([
-      Object.freeze({ x: -0.1, z: -0.055 }),
-      Object.freeze({ x: 0.1, z: 0.055 }),
-      Object.freeze({ x: 0, z: -0.055 }),
-      Object.freeze({ x: -0.1, z: 0.055 }),
-      Object.freeze({ x: 0.1, z: -0.055 }),
-      Object.freeze({ x: 0, z: 0.055 }),
+      Object.freeze({ x: -0.1, y: 0, z: -0.055 }),
+      Object.freeze({ x: 0.1, y: 0, z: 0.055 }),
+      Object.freeze({ x: 0, y: 0, z: -0.055 }),
+      Object.freeze({ x: -0.1, y: 0, z: 0.055 }),
+      Object.freeze({ x: 0.1, y: 0, z: -0.055 }),
+      Object.freeze({ x: 0, y: 0, z: 0.055 }),
+      Object.freeze({ x: -0.05, y: 0.06, z: 0 }),
+      Object.freeze({ x: 0.05, y: 0.06, z: 0 }),
+      Object.freeze({ x: -0.13, y: 0.06, z: 0 }),
+      Object.freeze({ x: 0.13, y: 0.06, z: 0 }),
+      Object.freeze({ x: 0, y: 0.06, z: -0.06 }),
+      Object.freeze({ x: 0, y: 0.06, z: 0.06 }),
     ]),
+  }),
+
+  /** Bouton « Rejouer », affiché au-dessus du panier une fois la liste complète. */
+  bouton: Object.freeze({
+    largeur: 0.24,
+    profondeur: 0.12,
+    hauteur: 0.03,
+    /** Inclinaison vers le joueur, en radians (environ 45° : bien visible d'en haut). */
+    inclinaison: 0.8,
+    /** Marge autour du bouton dans laquelle un pincement l'active. */
+    margeVisee: 0.03,
+    /** Enfoncement visuel lors de l'appui, et sa durée. */
+    enfoncement: 0.008,
+    dureeAppui: 180,
+    /** Hauteur au-dessus du bord du panier. */
+    hauteurAuDessusPanier: 0.12,
   }),
 
   /** Liste de courses : nombre d'articles tirés au hasard (bornes incluses). */
   liste: Object.freeze({
     tailleMinimale: 4,
     tailleMaximale: 6,
+    /** Exemplaires demandés par article : de 1 à ce nombre (sans dépasser le stock). */
+    quantiteMaximale: 3,
   }),
 
   /**

@@ -93,7 +93,29 @@ les briques techniques et les règles d'accessibilité.
   lisibilité ; police système en secours), trait épaissi par un contour, grain
   de craie appliqué en masque. Texte `#f6f6f0` sur `#2b3532` : contraste ≥ 9:1. Un article accepté se pose au fond du
   panier à l'une des 6 places de `CONFIG.panier.places` et n'en bouge plus.
-- (c) Réussite et « Rejouer » — à faire.
+- **(c) Réussite et « Rejouer »** ✅ (vérifié en jeu réel le 2026-11-02) :
+  liste complète → `sons.jouerReussite()`, `ardoise.afficherMessage('Bravo !', …)`,
+  bouton 3D « Rejouer » au-dessus du panier (incliné 0,8 rad). Rejouer : les
+  articles du panier retournent à leur place, nouvelle liste. Aussi au retour à
+  l'accueil (mode souris) et à la fin de la session VR.
+- **Quantités** ✅ (décidé le 2026-11-02, remplace « un seul exemplaire ») :
+  1 à 3 exemplaires par article (`liste.quantiteMaximale`), bornés par le stock
+  exposé et par la contenance du panier (12 places sur 2 couches,
+  `panier.places`). Articles : `singulier` / `pluriel` (« 1 régime de
+  bananes »). L'ardoise reçoit des textes (`{ texte, estCochee }`), sans
+  dépendre de la logique de jeu.
+
+**Étape 4 — Un étal par thème** (décidé le 2026-11-02, à faire)
+- 4 étals : **fruits, légumes, poissons, pains et viennoiseries** ; choix
+  sur la page d'accueil ; la liste est tirée dans le thème de l'étal.
+- Modèles **CC0 uniquement** (poissons compris). État des recherches :
+  fruits OK (Poly Haven, + litchi `food_lychee_01`) ; légumes : Poly Haven n'a
+  que patate douce, oignon, gingembre → pack **KIRI Engine « Fruit and Veg »**
+  (141 scans CC0, compte gratuit, FBX/Blender, liste exacte inconnue ;
+  demande de ne pas le redistribuer tel quel) ; poissons : **aucun CC0
+  photographié trouvé** (piste : Smithsonian Open Access) ; pains : Poly Haven
+  croissant, petits pains (+ gâteaux). **Blender n'est pas installé** (utile
+  pour convertir FBX → glTF).
 
 ## 4. Disposition (joueur assis à l'origine, face à -z)
 

@@ -8,6 +8,13 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 ## [Non publié]
 
 ### Ajouté
+- 2026-11-02 — Quantités : chaque article de la liste est demandé de 1 à 3 fois
+  (sans dépasser le stock de l'étal ni les 12 places du panier) ; l'ardoise
+  écrit « 1 citron », « 2 pommes », et « 2 pommes (encore 1) » en cours.
+- 2026-11-02 — Étape 3c (jeu) : liste complète → mélodie, « Bravo ! » sur
+  l'ardoise et bouton « Rejouer » au-dessus du panier ; rejouer remet les
+  articles à leur place et tire une nouvelle liste (aussi au retour à l'accueil
+  et à la sortie de la VR). 6 tests de plus (62 au total).
 - 2026-10-29 — Ardoise réaliste : surface d'ardoise grainée avec traces de
   craie mal effacée, cadre en bois 3D (bois de l'étal), texte écrit à la craie
   en police manuscrite « Patrick Hand » (OFL, copiée dans `ressources/polices/`),

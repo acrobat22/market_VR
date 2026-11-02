@@ -46,6 +46,12 @@ export async function chargerPoliceCraie(url) {
 }
 
 /**
+ * @typedef {object} LigneArdoise
+ * @property {string} texte - Texte de la ligne (« 2 pommes »).
+ * @property {boolean} estCochee - `true` : case cochée et texte barré.
+ */
+
+/**
  * Ardoise 3D affichant la liste de courses et les articles cochés.
  */
 export class Ardoise {
@@ -97,9 +103,53 @@ export class Ardoise {
   /**
    * Écrit la liste sur l'ardoise.
    *
-   * @param {readonly import('../jeu/partie.js').LigneListe[]} lignes - Articles et état coché.
+   * @param {readonly LigneArdoise[]} lignes - Texte et état coché de chaque ligne.
    */
   afficher(lignes) {
+    this.#ecrireALaCraie((craie, largeur, hauteur) => {
+      const marge = largeur * 0.05;
+      craie.textAlign = 'center';
+      ecrire(craie, TITRE, largeur / 2, hauteur * 0.14, Math.round(hauteur * 0.17), largeur - 2 * marge);
+      craie.textAlign = 'left';
+
+      // Articles en colonnes, de haut en bas puis de gauche à droite.
+      const rangees = Math.ceil(lignes.length / COLONNES);
+      const largeurColonne = (largeur - 2 * marge) / COLONNES;
+      const tailleTexte = Math.round(hauteur * 0.15);
+      lignes.forEach((ligne, indice) => {
+        const x = marge + Math.floor(indice / rangees) * largeurColonne;
+        // Écart fixe entre les rangées (3 au plus), même pour une liste courte.
+        const y = hauteur * (0.38 + (indice % rangees) * 0.24);
+        dessinerLigne(craie, ligne, x, y, largeurColonne * 0.95, tailleTexte);
+      });
+    });
+  }
+
+  /**
+   * Écrit un message centré à la place de la liste (par exemple les félicitations).
+   *
+   * @param {string} titre - Titre, en gros (« Bravo ! »).
+   * @param {readonly string[]} lignes - Une ou deux phrases sous le titre.
+   */
+  afficherMessage(titre, lignes) {
+    this.#ecrireALaCraie((craie, largeur, hauteur) => {
+      const largeurUtile = largeur * 0.9;
+      craie.textAlign = 'center';
+      ecrire(craie, titre, largeur / 2, hauteur * 0.3, Math.round(hauteur * 0.3), largeurUtile);
+      lignes.forEach((ligne, indice) => {
+        ecrire(craie, ligne, largeur / 2, hauteur * (0.62 + indice * 0.2), Math.round(hauteur * 0.13), largeurUtile);
+      });
+    });
+  }
+
+  /**
+   * Efface l'ardoise, fait écrire le contenu, applique le grain de la craie et
+   * met à jour la texture.
+   *
+   * @param {(craie: CanvasRenderingContext2D, largeur: number, hauteur: number) => void} ecrireContenu
+   *   Écrit le contenu sur le calque de craie.
+   */
+  #ecrireALaCraie(ecrireContenu) {
     const { width: largeur, height: hauteur } = this.canevas;
     const craie = this.calqueCraie.getContext('2d');
     craie.clearRect(0, 0, largeur, hauteur);
@@ -108,22 +158,7 @@ export class Ardoise {
     craie.lineCap = 'round';
     craie.lineJoin = 'round';
     craie.textBaseline = 'middle';
-    const marge = largeur * 0.05;
-
-    craie.textAlign = 'center';
-    ecrire(craie, TITRE, largeur / 2, hauteur * 0.14, Math.round(hauteur * 0.17), largeur - 2 * marge);
-    craie.textAlign = 'left';
-
-    // Articles en colonnes, de haut en bas puis de gauche à droite.
-    const rangees = Math.ceil(lignes.length / COLONNES);
-    const largeurColonne = (largeur - 2 * marge) / COLONNES;
-    const tailleTexte = Math.round(hauteur * 0.15);
-    lignes.forEach((ligne, indice) => {
-      const x = marge + Math.floor(indice / rangees) * largeurColonne;
-      // Écart fixe entre les rangées (3 au plus), même pour une liste courte.
-      const y = hauteur * (0.38 + (indice % rangees) * 0.24);
-      dessinerLigne(craie, ligne, x, y, largeurColonne * 0.95, tailleTexte);
-    });
+    ecrireContenu(craie, largeur, hauteur);
 
     // Grain de la craie : de petits manques dans les traits.
     craie.globalCompositeOperation = 'destination-out';
@@ -156,11 +191,11 @@ function ecrire(contexte, texte, x, y, taille, largeurMaximale) {
 }
 
 /**
- * Dessine une ligne : case tracée à la main (cochée ou vide), puis nom de
- * l'article (barré si coché).
+ * Dessine une ligne : case tracée à la main (cochée ou vide), puis texte
+ * (barré si coché).
  *
  * @param {CanvasRenderingContext2D} contexte - Contexte de dessin.
- * @param {import('../jeu/partie.js').LigneListe} ligne - Article et état.
+ * @param {LigneArdoise} ligne - Texte et état coché.
  * @param {number} x - Abscisse du bord gauche.
  * @param {number} y - Ordonnée du milieu de la ligne.
  * @param {number} largeurMaximale - Largeur disponible.
@@ -192,11 +227,11 @@ function dessinerLigne(contexte, ligne, x, y, largeurMaximale, tailleTexte) {
 
   const xTexte = x + cote * 1.6;
   const largeurTexte = largeurMaximale - (xTexte - x);
-  ecrire(contexte, ligne.article.nom, xTexte, y, tailleTexte, largeurTexte);
+  ecrire(contexte, ligne.texte, xTexte, y, tailleTexte, largeurTexte);
 
   // Article dans le panier : nom barré d'un trait à main levée, en plus de la coche.
   if (ligne.estCochee) {
-    const longueur = Math.min(contexte.measureText(ligne.article.nom).width, largeurTexte);
+    const longueur = Math.min(contexte.measureText(ligne.texte).width, largeurTexte);
     contexte.lineWidth = tailleTexte * 0.07;
     contexte.beginPath();
     contexte.moveTo(xTexte - tailleTexte * 0.1, y + tailleTexte * 0.04);

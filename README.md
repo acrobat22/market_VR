@@ -5,7 +5,8 @@ Jeu de **courses au marché** en réalité virtuelle, pensé pour les
 sans installation.
 
 - On joue **assis** devant un étal, avec un seul geste : le **pincement**.
-- Une **liste de courses** est tirée au hasard ; on remplit son panier.
+- Une **liste de courses** est tirée au hasard (« 2 pommes », « 1 citron ») ;
+  on remplit son panier, puis on peut rejouer.
 - Aucun chrono, aucune erreur possible ; texte en grand, sons doux.
 
 Le contexte complet, les décisions et l'état d'avancement sont dans
@@ -17,7 +18,8 @@ Le contexte complet, les décisions et l'état d'avancement sont dans
 |---|---|---|
 | 1 | Socle (projet, modules communs, tirage de la liste) | ✅ |
 | 2 | Décor : place tirée au hasard parmi 5, étal garni d'objets photographiés | ✅ à valider |
-| 3 | Jeu : ardoise, saisie, panier, articles cochés, réussite | en cours : saisie, ardoise et panier faits ; reste la réussite |
+| 3 | Jeu : ardoise, saisie, panier, quantités, réussite et « Rejouer » | ✅ à valider |
+| 4 | Un étal par thème (fruits, légumes, poissons, pains et viennoiseries), choisi sur l'accueil | à faire (modèles 3D à trouver) |
 
 ## Structure
 
@@ -47,10 +49,10 @@ src/
   marche/ardoise.js        Ardoise de la liste écrite à la craie, cadre en bois (cases cochées et barrées)
   marche/etal.js           L'étal : comptoir, auvent, cagettes, corbeilles, panier, décor
   marche/ombreContact.js   Ombre douce au pied des objets
-  jeu/listeCourses.js      Logique pure : tirage de la liste au hasard
+  jeu/listeCourses.js      Logique pure : tirage de la liste et des quantités au hasard
   jeu/saisie.js            Saisie et déplacement des objets par pincement (repris de « construction »)
   jeu/exemplaire.js        Article saisissable : survol, déplacement en douceur (place ou panier)
-  jeu/partie.js            Logique pure : liste en cours, articles cochés, fin de partie
+  jeu/partie.js            Logique pure : liste en cours, quantités déposées, fin de partie, texte des lignes
   jeu/panier.js            Logique pure : un article lâché tombe-t-il dans le panier ?
   jeu/mouvement.js         Logique pure : adoucissement et interpolation des mouvements
 tests/                     Tests des fonctions pures (node --test)

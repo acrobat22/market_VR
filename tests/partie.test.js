@@ -1,59 +1,124 @@
 /**
- * @file Tests de la partie (liste cochée au fil des dépôts) et du panier.
+ * @file Tests de la partie (quantités cochées au fil des dépôts), du tirage
+ * des quantités et du panier.
  */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { Partie } from '../src/jeu/partie.js';
+import { Partie, libelleLigne } from '../src/jeu/partie.js';
 import { estAuDessusDuPanier } from '../src/jeu/panier.js';
+import { tirerQuantites } from '../src/jeu/listeCourses.js';
 
-const LISTE = [
-  { id: 'pomme', nom: 'Pommes' },
-  { id: 'kiwi', nom: 'Kiwis' },
-  { id: 'oignon', nom: 'Oignons' },
+const POMME = { id: 'pomme', singulier: 'pomme', pluriel: 'pommes' };
+const KIWI = { id: 'kiwi', singulier: 'kiwi', pluriel: 'kiwis' };
+const OIGNON = { id: 'oignon', singulier: 'oignon', pluriel: 'oignons' };
+
+/** Liste type : 2 pommes, 1 kiwi, 3 oignons. */
+const COMMANDES = [
+  { article: POMME, quantite: 2 },
+  { article: KIWI, quantite: 1 },
+  { article: OIGNON, quantite: 3 },
 ];
 
 test('une nouvelle partie n’a rien de coché', () => {
-  const partie = new Partie(LISTE);
-  assert.equal(partie.nombreCochees, 0);
+  const partie = new Partie(COMMANDES);
+  assert.equal(partie.nombreDeposes, 0);
   assert.equal(partie.estTerminee, false);
-  assert.ok(partie.lignes.every((ligne) => !ligne.estCochee));
+  assert.ok(partie.lignes.every((ligne) => !ligne.estCochee && ligne.deposes === 0));
 });
 
-test('un article de la liste est accepté et coché', () => {
-  const partie = new Partie(LISTE);
+test('un article demandé une fois est coché dès le premier dépôt', () => {
+  const partie = new Partie(COMMANDES);
   assert.equal(partie.deposer('kiwi'), true);
   assert.equal(partie.lignes[1].estCochee, true);
-  assert.equal(partie.nombreCochees, 1);
+  assert.equal(partie.nombreDeposes, 1);
+});
+
+test('un article demandé deux fois n’est coché qu’au second dépôt', () => {
+  const partie = new Partie(COMMANDES);
+  assert.equal(partie.deposer('pomme'), true);
+  assert.equal(partie.lignes[0].estCochee, false);
+  assert.equal(partie.deposer('pomme'), true);
+  assert.equal(partie.lignes[0].estCochee, true);
+});
+
+test('un exemplaire de trop est refusé', () => {
+  const partie = new Partie(COMMANDES);
+  partie.deposer('kiwi');
+  assert.equal(partie.deposer('kiwi'), false);
+  assert.equal(partie.nombreDeposes, 1);
 });
 
 test('un article hors liste est refusé', () => {
-  const partie = new Partie(LISTE);
+  const partie = new Partie(COMMANDES);
   assert.equal(partie.deposer('citron'), false);
-  assert.equal(partie.nombreCochees, 0);
+  assert.equal(partie.nombreDeposes, 0);
 });
 
-test('un article déjà coché est refusé la seconde fois', () => {
-  const partie = new Partie(LISTE);
-  partie.deposer('pomme');
-  assert.equal(partie.deposer('pomme'), false);
-  assert.equal(partie.nombreCochees, 1);
-});
-
-test('la partie est terminée quand tout est coché', () => {
-  const partie = new Partie(LISTE);
-  partie.deposer('oignon');
-  partie.deposer('pomme');
+test('la partie est terminée quand toutes les quantités sont dans le panier', () => {
+  const partie = new Partie(COMMANDES);
+  ['pomme', 'pomme', 'kiwi', 'oignon', 'oignon'].forEach((id) => partie.deposer(id));
   assert.equal(partie.estTerminee, false);
-  partie.deposer('kiwi');
+  partie.deposer('oignon');
   assert.equal(partie.estTerminee, true);
 });
 
 test('la liste reçue n’est pas modifiée', () => {
-  const copie = structuredClone(LISTE);
-  new Partie(LISTE).deposer('pomme');
-  assert.deepEqual(LISTE, copie);
+  const copie = structuredClone(COMMANDES);
+  new Partie(COMMANDES).deposer('pomme');
+  assert.deepEqual(COMMANDES, copie);
+});
+
+test('l’ardoise écrit « 1 kiwi » au singulier et « 2 pommes » au pluriel', () => {
+  const partie = new Partie(COMMANDES);
+  assert.equal(libelleLigne(partie.lignes[1]), '1 kiwi');
+  assert.equal(libelleLigne(partie.lignes[0]), '2 pommes');
+});
+
+test('une ligne entamée indique ce qu’il reste à prendre', () => {
+  const partie = new Partie(COMMANDES);
+  partie.deposer('oignon');
+  assert.equal(libelleLigne(partie.lignes[2]), '3 oignons (encore 2)');
+  partie.deposer('oignon');
+  partie.deposer('oignon');
+  assert.equal(libelleLigne(partie.lignes[2]), '3 oignons');
+});
+
+/** Générateur pseudo-aléatoire reproductible (pour des tests stables). */
+function generateur(graine) {
+  let etat = graine;
+  return () => {
+    etat = (etat * 1664525 + 1013904223) % 4294967296;
+    return etat / 4294967296;
+  };
+}
+
+const REGLAGES_QUANTITES = { quantiteMaximale: 3, contenancePanier: 12 };
+
+test('chaque quantité tirée est comprise entre 1 et 3', () => {
+  const hasard = generateur(5);
+  for (let tirage = 0; tirage < 100; tirage++) {
+    for (const { quantite } of tirerQuantites([POMME, KIWI, OIGNON], () => 9, REGLAGES_QUANTITES, hasard)) {
+      assert.ok(quantite >= 1 && quantite <= 3, `quantité ${quantite}`);
+    }
+  }
+});
+
+test('une quantité ne dépasse jamais le stock de l’étal', () => {
+  const hasard = generateur(6);
+  for (let tirage = 0; tirage < 100; tirage++) {
+    const [commande] = tirerQuantites([POMME], () => 1, REGLAGES_QUANTITES, hasard);
+    assert.equal(commande.quantite, 1);
+  }
+});
+
+test('le total ne dépasse jamais la contenance du panier', () => {
+  const articles = [POMME, KIWI, OIGNON, { id: 'a' }, { id: 'b' }, { id: 'c' }];
+  const toujoursTrois = () => 0.99;
+  const commandes = tirerQuantites(articles, () => 9, { quantiteMaximale: 3, contenancePanier: 10 }, toujoursTrois);
+  assert.equal(commandes.reduce((somme, commande) => somme + commande.quantite, 0), 10);
+  assert.ok(commandes.every((commande) => commande.quantite >= 1));
 });
 
 // Valeurs exactes en binaire, pour tester le bord sans erreur d'arrondi.

@@ -4,9 +4,10 @@
  * C'est le seul endroit qui connaît tous les modules (inversion des
  * dépendances) : chaque module reçoit ici ce dont il a besoin.
  *
- * Étape 3 (en cours) : une liste est tirée au hasard et écrite sur l'ardoise ;
- * on prend les articles de l'étal (pincement ou souris). Lâché dans le panier,
- * un article de la liste y reste et se coche ; sinon, il retourne à sa place.
+ * Une liste (articles et quantités) est tirée au hasard et écrite sur
+ * l'ardoise ; on prend les articles de l'étal (pincement ou souris). Lâché dans
+ * le panier, un article de la liste y reste ; sinon, il retourne à sa place.
+ * Liste complète : mélodie, message, et « Rejouer » pour une nouvelle liste.
  */
 
 import { Box3, Vector3 } from 'three';
@@ -26,8 +27,10 @@ import { DetecteurPincement } from './entrees/detecteurPincement.js';
 import { Souris } from './entrees/souris.js';
 import { GestionnaireSaisie } from './jeu/saisie.js';
 import { Exemplaire } from './jeu/exemplaire.js';
-import { tirerListe } from './jeu/listeCourses.js';
-import { Partie } from './jeu/partie.js';
+import { tirerListe, tirerQuantites } from './jeu/listeCourses.js';
+import { Partie, libelleLigne } from './jeu/partie.js';
+import { Bouton3D } from './interface/bouton3D.js';
+import { dessinerLecture } from './interface/icones.js';
 import { estAuDessusDuPanier } from './jeu/panier.js';
 import { ModeSansCasque } from './interface/modeSansCasque.js';
 import { Sons } from './interface/sons.js';
@@ -141,15 +144,34 @@ document.addEventListener('click', () => sons.reveiller());
 // Temps de la dernière image, utilisé lors des pincements.
 let tempsCourant = 0;
 
-// Liste de courses tirée au hasard (4 à 6 articles), écrite sur l'ardoise.
-const { tailleMinimale, tailleMaximale } = CONFIG.liste;
-const partie = new Partie(tirerListe(ARTICLES,
-  tailleMinimale + Math.floor(Math.random() * (tailleMaximale - tailleMinimale + 1))));
+/**
+ * Tire une nouvelle liste de courses : 4 à 6 articles, chacun demandé de 1 à
+ * 3 fois (sans dépasser ce qui est exposé, ni la contenance du panier).
+ *
+ * @returns {Partie}
+ */
+function tirerPartie() {
+  const { tailleMinimale, tailleMaximale, quantiteMaximale } = CONFIG.liste;
+  const articles = tirerListe(ARTICLES,
+    tailleMinimale + Math.floor(Math.random() * (tailleMaximale - tailleMinimale + 1)));
+  return new Partie(tirerQuantites(
+    articles,
+    (article) => etal.emplacements.get(article.id)?.exemplaires.length ?? 0,
+    { quantiteMaximale, contenancePanier: CONFIG.panier.places.length },
+  ));
+}
+
+let partie = tirerPartie();
 const ardoise = new Ardoise(CONFIG.ardoise, creerMatiere({
   dossier: CONFIG.etal.dossierTextures, nom: CONFIG.etal.textureBois, repetitionX: 1, repetitionY: 0.3,
 }));
-ardoise.afficher(partie.lignes);
 scene.add(ardoise.objet3D);
+
+/** Écrit la liste en cours sur l'ardoise (« 2 pommes », coché quand le compte y est). */
+function afficherListe() {
+  ardoise.afficher(partie.lignes.map((ligne) => ({ texte: libelleLigne(ligne), estCochee: ligne.estCochee })));
+}
+afficherListe();
 
 // Panier : zone où un article lâché compte comme déposé (marge généreuse).
 const { centrePanier } = etal;
@@ -179,12 +201,50 @@ function surArticleLache(exemplaire) {
     return;
   }
   const { places } = CONFIG.panier;
-  const place = places[(partie.nombreCochees - 1) % places.length];
-  const fond = new Vector3(centrePanier.x + place.x, centrePanier.y + CONFIG.panier.epaisseurFond, centrePanier.z + place.z);
+  const place = places[(partie.nombreDeposes - 1) % places.length];
+  const appui = new Vector3(
+    centrePanier.x + place.x,
+    centrePanier.y + CONFIG.panier.epaisseurFond + place.y,
+    centrePanier.z + place.z,
+  );
   exemplaire.estDansPanier = true;
-  exemplaire.deplacerVers(exemplaire.positionPourPoserSur(fond), tempsCourant);
-  sons.jouerAccrochage();
-  ardoise.afficher(partie.lignes);
+  exemplaire.deplacerVers(exemplaire.positionPourPoserSur(appui), tempsCourant);
+  if (partie.estTerminee) {
+    // Liste complète : mélodie, félicitations et « Rejouer ».
+    sons.jouerReussite();
+    ardoise.afficherMessage('Bravo !', ['Vos courses sont faites.', 'Pincez « Rejouer » pour une nouvelle liste.']);
+    boutonRejouer.objet3D.visible = true;
+  } else {
+    sons.jouerAccrochage();
+    afficherListe();
+  }
+}
+
+// « Rejouer » : n'apparaît qu'une fois la liste complète, au-dessus du panier.
+const boutonRejouer = new Bouton3D(CONFIG.bouton, {
+  libelle: 'Rejouer',
+  dessinerIcone: dessinerLecture,
+  surAppui: () => commencerNouvellePartie(),
+});
+boutonRejouer.objet3D.position.set(centrePanier.x, hauteurBordPanier + CONFIG.bouton.hauteurAuDessusPanier, centrePanier.z);
+boutonRejouer.objet3D.visible = false;
+scene.add(boutonRejouer.objet3D);
+
+/**
+ * Nouvelle partie : les articles du panier retournent à leur place, une
+ * nouvelle liste est tirée et écrite sur l'ardoise.
+ */
+function commencerNouvellePartie() {
+  for (const exemplaire of exemplaires) {
+    if (exemplaire.estDansPanier) {
+      // De retour à sa place, il redeviendra saisissable (voir la boucle de rendu).
+      exemplaire.estDansPanier = false;
+      exemplaire.renvoyer(tempsCourant);
+    }
+  }
+  partie = tirerPartie();
+  afficherListe();
+  boutonRejouer.objet3D.visible = false;
 }
 
 // Chaque fruit ou pain de l'étal devient saisissable.
@@ -201,7 +261,11 @@ for (const exemplaire of exemplaires) {
  */
 const ecouteursPincement = {
   surDebutPincement: (cote, point, options) => {
-    if (saisie.saisir(cote, point, options)) {
+    // Un pincement sur « Rejouer » (s'il est affiché) l'active ; ailleurs, il saisit un article.
+    if (boutonRejouer.objet3D.visible && boutonRejouer.estVise(point)) {
+      boutonRejouer.appuyer(tempsCourant);
+      sons.jouerSaisie();
+    } else if (saisie.saisir(cote, point, options)) {
       sons.jouerSaisie();
     }
   },
@@ -241,7 +305,7 @@ const modeSansCasque = new ModeSansCasque({
   barreAide: document.getElementById('barre-aide'),
   boutonEssayer: document.getElementById('bouton-souris'),
   boutonRetour: document.getElementById('bouton-retour'),
-}, souris);
+}, souris, () => commencerNouvellePartie());
 
 const sessionXR = new SessionXR({
   renderer,
@@ -252,6 +316,8 @@ const sessionXR = new SessionXR({
 sessionXR.initialiser();
 // En VR, ce sont les mains qui comptent : la souris est mise de côté.
 renderer.xr.addEventListener('sessionstart', () => modeSansCasque.desactiver());
+// Retour à l'accueil après la VR : la prochaine partie repart de zéro.
+renderer.xr.addEventListener('sessionend', () => commencerNouvellePartie());
 
 // Boucle de rendu : `setAnimationLoop` est obligatoire en WebXR
 // (elle suit la fréquence d'affichage du casque).
@@ -261,6 +327,7 @@ renderer.setAnimationLoop((temps) => {
   souris.mettreAJour();
   const pointsDePincement = new Map([...mains.pointsDePincement, ...souris.pointsDePincement]);
   saisie.mettreAJour(pointsDePincement);
+  boutonRejouer.mettreAJour(pointsDePincement, temps);
   for (const exemplaire of exemplaires) {
     // Revenu à sa place : l'article peut de nouveau être pris. Dans le panier, il y reste.
     if (exemplaire.mettreAJour(temps) && !exemplaire.estDansPanier) {

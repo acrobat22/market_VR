@@ -10,7 +10,8 @@ import { ARTICLES } from '../src/marche/articles.js';
 
 test('les identifiants et les noms sont uniques', () => {
   assert.equal(new Set(ARTICLES.map((article) => article.id)).size, ARTICLES.length);
-  assert.equal(new Set(ARTICLES.map((article) => article.nom)).size, ARTICLES.length);
+  assert.equal(new Set(ARTICLES.map((article) => article.singulier)).size, ARTICLES.length);
+  assert.equal(new Set(ARTICLES.map((article) => article.pluriel)).size, ARTICLES.length);
 });
 
 test('chaque article a une quantité exposée positive', () => {
