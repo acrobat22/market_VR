@@ -135,10 +135,10 @@ les briques techniques et les règles d'accessibilité.
   retirés, ainsi que leurs modèles. Le mécanisme « Bientôt » a été retiré.
 - Pistes : gros fruits en décor au sol (pastèque) ; un jour, poissons ou pains
   scannés soi-même avec l'application KIRI Engine (scans CC0).
-- **Fragilité** : une texture glTF isolée en échec n'est pas retentée (seul le
-  modèle entier l'est) → objet blanc. Vu avec Chrome sans affichage ; possible
-  sur le Quest en Wi-Fi faible. Amélioration possible : vérifier les textures
-  après chargement et retenter le modèle.
+- ✅ Textures en échec (2026-11-02) : `modeles3D.js` compare les textures
+  prévues par le glTF (`parser.associations` + `parser.json.materials`) à
+  celles des matières ; s'il en manque, le modèle est rechargé (3 essais),
+  puis gardé tel quel. Testé avec un serveur qui refuse une 1ʳᵉ demande.
 - Modèles **CC0 uniquement** (poissons compris). État des recherches :
   fruits OK (Poly Haven, + litchi `food_lychee_01`) ; légumes : Poly Haven n'a
   que patate douce, oignon, gingembre → pack **KIRI Engine « Fruit and Veg »**

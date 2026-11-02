@@ -1,5 +1,5 @@
 /**
- * @file Chargement des modèles 3D photographiés (glTF, Poly Haven, CC0).
+ * @file Chargement des modèles 3D photographiés (glTF, Poly Haven et KIRI Engine, CC0).
  *
  * Chaque modèle est chargé une seule fois ; les exemplaires posés dans la
  * scène sont des copies qui partagent la géométrie et les textures (peu de
@@ -14,6 +14,49 @@ const TENTATIVES = 3;
 
 /** Délai avant une nouvelle tentative (multiplié par le numéro d'essai), en ms. */
 const DELAI_REPRISE = 400;
+
+/**
+ * Textures d'une matière glTF et la propriété Three.js qui les reçoit.
+ * Une texture en échec n'empêche pas le chargement du modèle : la propriété
+ * reste simplement vide (l'objet paraît blanc).
+ */
+const TEXTURES_ATTENDUES = Object.freeze([
+  [(definition) => definition.pbrMetallicRoughness?.baseColorTexture, 'map'],
+  [(definition) => definition.pbrMetallicRoughness?.metallicRoughnessTexture, 'roughnessMap'],
+  [(definition) => definition.normalTexture, 'normalMap'],
+  [(definition) => definition.occlusionTexture, 'aoMap'],
+  [(definition) => definition.emissiveTexture, 'emissiveMap'],
+]);
+
+/**
+ * Compte les textures prévues par le fichier glTF mais absentes des matières
+ * chargées (image en échec).
+ *
+ * @param {import('three/addons/loaders/GLTFLoader.js').GLTF} gltf - Modèle chargé.
+ * @returns {number}
+ */
+function compterTexturesManquantes(gltf) {
+  const matieres = new Set();
+  gltf.scene.traverse((objet) => {
+    if (objet.isMesh) {
+      [objet.material].flat().forEach((matiere) => matieres.add(matiere));
+    }
+  });
+  let manquantes = 0;
+  for (const matiere of matieres) {
+    const indice = gltf.parser.associations.get(matiere)?.materials;
+    const definition = gltf.parser.json.materials?.[indice];
+    if (!definition) {
+      continue;
+    }
+    for (const [lireTexture, propriete] of TEXTURES_ATTENDUES) {
+      if (lireTexture(definition) && !matiere[propriete]) {
+        manquantes += 1;
+      }
+    }
+  }
+  return manquantes;
+}
 
 /**
  * Bibliothèque de modèles prêts à être copiés.
@@ -57,7 +100,9 @@ export class BibliothequeModeles {
 
   /**
    * Charge un fichier glTF, en réessayant après un court délai en cas d'échec
-   * (connexion Wi-Fi capricieuse, serveur momentanément occupé).
+   * (connexion Wi-Fi capricieuse, serveur momentanément occupé). Un modèle
+   * dont une texture n'a pas pu être chargée est lui aussi rechargé ; au
+   * dernier essai, il est gardé tel quel (mieux vaut un objet blanc que rien).
    *
    * @param {string} url - Adresse du fichier glTF.
    * @returns {Promise<import('three/addons/loaders/GLTFLoader.js').GLTF>}
@@ -66,11 +111,20 @@ export class BibliothequeModeles {
     let derniereErreur;
     for (let essai = 1; essai <= TENTATIVES; essai++) {
       try {
-        return await this.chargeur.loadAsync(url);
+        const gltf = await this.chargeur.loadAsync(url);
+        const manquantes = compterTexturesManquantes(gltf);
+        if (manquantes === 0) {
+          return gltf;
+        }
+        if (essai === TENTATIVES) {
+          console.error(`[BibliothequeModeles] ${url} : ${manquantes} texture(s) toujours absente(s), modèle gardé tel quel.`);
+          return gltf;
+        }
+        derniereErreur = new Error(`${manquantes} texture(s) non chargée(s)`);
       } catch (erreur) {
         derniereErreur = erreur;
-        await new Promise((resoudre) => setTimeout(resoudre, DELAI_REPRISE * essai));
       }
+      await new Promise((resoudre) => setTimeout(resoudre, DELAI_REPRISE * essai));
     }
     throw derniereErreur;
   }

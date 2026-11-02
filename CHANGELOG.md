@@ -7,6 +7,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Non publié]
 
+### Corrigé
+- 2026-11-02 — Une texture qui n'a pas pu être chargée (Wi-Fi capricieux)
+  fait recharger son modèle, jusqu'à 3 essais : plus d'objet blanc. Vérifié
+  avec un serveur d'essai qui refuse la première demande d'une texture.
+
 ### Ajouté
 - 2026-11-02 — Oignon (Poly Haven) sur l'étal de légumes : 11 légumes, l'étal
   en montre 10 au hasard à chaque partie.
