@@ -110,7 +110,6 @@ const bibliotheque = new BibliothequeModeles(CONFIG.dossierModeles);
 await Promise.all([
   bibliotheque.charger([
     CONFIG.panier.modele,
-    CONFIG.corbeille.modele,
     ...CONFIG.etagere.map((element) => element.modele),
     ...CONFIG.decor.map((element) => element.modele),
   ]),

@@ -98,7 +98,7 @@ export const CONFIG = Object.freeze({
     distanceComptoir: 0.38,
     /** Nombre de cagettes : 6 au rang arrière, 4 au rang avant (un rayon plus riche en montre autant, au hasard). */
     nombreCagettes: 10,
-    largeur: 1.9,
+    largeur: 2.1,
     profondeur: 0.62,
     hauteur: 0.74,
     epaisseurPlateau: 0.05,
@@ -129,9 +129,9 @@ export const CONFIG = Object.freeze({
 
   /** Cagettes en planches qui présentent les articles. */
   cagette: Object.freeze({
-    largeur: 0.25,
-    profondeur: 0.21,
-    hauteur: 0.085,
+    largeur: 0.3,
+    profondeur: 0.24,
+    hauteur: 0.1,
     epaisseurPlanche: 0.012,
     couleur: 0xd9b48a,
   }),
@@ -208,16 +208,6 @@ export const CONFIG = Object.freeze({
     police: './ressources/polices/PatrickHand-Regular.ttf',
     /** Hauteur de la traverse où sont attachées les cordelettes. */
     hauteurAccroche: 1.93,
-  }),
-
-  /**
-   * Paniers ronds en osier aux extrémités du rang avant : simple décor (vides),
-   * car leurs bords hauts cachaient ce qu'on y mettait.
-   */
-  corbeille: Object.freeze({
-    modele: 'wicker_basket_02',
-    /** Seulement le panier (le modèle contient aussi son couvercle, posé à côté). */
-    element: 'wicker_basket_02_base',
   }),
 
   /**

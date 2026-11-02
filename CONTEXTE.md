@@ -154,15 +154,21 @@ les briques techniques et les règles d'accessibilité.
         ┌──── auvent rayé rouge et crème ────┐
         │  étagère du fond : bol, corbeille   │
         │ [c][c][c][c][c][c]  ← rang arrière : gradin, inclinées, rehaussées
-        │ (o)[c][c](PANIER)[c][c](o)  ← rang avant ; (o) = corbeilles de pains
-        └─────────── comptoir (1,90 m) ──────┘
+        │   [c][c](PANIER)[c][c]      ← rang avant (corbeilles retirées)
+        └─────────── comptoir (2,10 m) ──────┘
  tonneau                               caisses empilées
 ```
 
-- Comptoir : bord avant à 0,38 m du joueur, 0,62 m de profondeur, 0,74 m de haut.
+- Comptoir : bord avant à 0,38 m du joueur, 2,10 m de large, 0,62 m de profondeur,
+  0,74 m de haut (hauteur de table : joueur assis).
+- Cagettes : 30 × 24 × 10 cm (2026-11-02 ; avant 25 × 21 × 8,5, effet « maquette »).
+- Articles mis à leur **taille réelle** : champ `taille` (plus grande dimension,
+  en m) ; l'échelle est calculée au chargement (`calculerEchelle`, moyenne des
+  variantes). Remplace les échelles réglées à la main (audit du 2026-11-02 :
+  pomme 9,8 → 8 cm, kiwi 9 → 6,5, litchi 5,1 → 3,5, carotte 26 → 18…).
 - Rang avant ≈ 0,5 m (à portée de main) ; rang arrière ≈ 0,75 m (se pencher un peu).
 - Tous les réglages sont dans `src/config.js` (sections `etal`, `cagette`,
-  `corbeille`, `echappes`, `etagere`, `decor`, `camera`, `soleil`, `ciel`).
+  `echappes`, `etagere`, `decor`, `camera`, `soleil`, `ciel`).
 
 ## 5. Prochaine étape : le jeu (étape 3) — à proposer avant de coder
 

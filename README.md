@@ -49,7 +49,7 @@ src/
   marche/modeles3D.js      Chargement des modèles (tentatives, éléments séparables)
   marche/matieres.js       Bois et toile réalistes, préchargés
   marche/ardoise.js        Ardoise de la liste écrite à la craie, cadre en bois (cases cochées et barrées)
-  marche/etal.js           L'étal : comptoir, auvent, cagettes, corbeilles, panier, décor
+  marche/etal.js           L'étal : structure (comptoir, auvent, panier, décor) et garniture (cagettes, articles)
   marche/ombreContact.js   Ombre douce au pied des objets
   jeu/listeCourses.js      Logique pure : tirage de la liste et des quantités au hasard
   jeu/saisie.js            Saisie et déplacement des objets par pincement (repris de « construction »)

@@ -8,6 +8,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 ## [Non publié]
 
 ### Corrigé
+- 2026-11-02 — Tailles : chaque article a sa taille réelle (`taille`, en m) et
+  le jeu calcule l'échelle du modèle (les scans n'ont pas d'échelle fiable).
+  Pommes, kiwis, litchis, grenades, citrons verts, goyaves, melons, carottes,
+  navets, oignons n'étaient plus à la bonne taille ; poires trop fines.
+- Cagettes agrandies (30 × 24 × 10 cm au lieu de 25 × 21 × 8,5), comptoir
+  élargi à 2,10 m, corbeilles vides du rang avant retirées.
 - 2026-11-02 — Une texture qui n'a pas pu être chargée (Wi-Fi capricieux)
   fait recharger son modèle, jusqu'à 3 essais : plus d'objet blanc. Vérifié
   avec un serveur d'essai qui refuse la première demande d'une texture.

@@ -1,7 +1,6 @@
 /**
  * @file Étal de marché : comptoir en bois, poteaux, auvent rayé, étagère,
- * cagettes garnies des articles du rayon, corbeilles décoratives, panier du
- * joueur, décor.
+ * cagettes garnies des articles du rayon, panier du joueur, décor.
  *
  * Le joueur est assis à l'origine, face à l'étal (vers -z). Le rang avant
  * est à portée de main ; le rang arrière, surélevé, demande de se pencher
@@ -11,6 +10,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
+import { calculerEchelle } from './articles.js';
 import { creerMatiere } from './matieres.js';
 
 /**
@@ -39,7 +39,7 @@ import { creerMatiere } from './matieres.js';
 
 /**
  * Construit la structure de l'étal : comptoir, auvent, panier du joueur,
- * corbeilles, étagère et décor. Les articles sont posés à part, par `garnir`,
+ * étagère et décor. Les articles sont posés à part, par `garnir`,
  * pour pouvoir changer d'articles (de rayon, ou de partie) sans tout reconstruire.
  *
  * @param {typeof import('../config.js').CONFIG} config - Configuration globale.
@@ -79,20 +79,15 @@ export function construireEtal(config, bibliotheque) {
     z + reglages.courbureRangs * x * x + (Math.random() - 0.5) * reglages.desordrePosition,
   );
 
-  // Rang avant : corbeille, 2 cagettes, panier du joueur, 2 cagettes, corbeille.
+  // Rang avant : 2 cagettes, panier du joueur, 2 cagettes.
   const largeurPanier = 0.42;
-  const largeurCorbeille = 0.24;
-  const largeurs = [largeurCorbeille, config.cagette.largeur, config.cagette.largeur, largeurPanier,
-    config.cagette.largeur, config.cagette.largeur, largeurCorbeille];
+  const largeurs = [config.cagette.largeur, config.cagette.largeur, largeurPanier,
+    config.cagette.largeur, config.cagette.largeur];
   const positionsX = repartirLargeurs(largeurs, 0.03);
-  for (const position of [0, 6]) {
-    const centre = enArc(positionsX[position], zRangAvant).setY(dessusComptoir);
-    poserCorbeille(groupe, config, bibliotheque, centre, pose(centre, { inclinaison: 0.12 }), bois);
-  }
 
   // Panier du joueur, au centre du rang avant.
   const panier = bibliotheque.creer(config.panier.modele);
-  const centrePanier = new THREE.Vector3(positionsX[3], dessusComptoir, zRangAvant);
+  const centrePanier = new THREE.Vector3(positionsX[2], dessusComptoir, zRangAvant);
   if (panier) {
     panier.position.copy(centrePanier);
     panier.name = 'panier';
@@ -143,7 +138,7 @@ export function construireEtal(config, bibliotheque) {
     });
 
     // Rang avant : cagettes de part et d'autre du panier.
-    [1, 2, 4, 5].slice(0, rangAvant.length).forEach((position, indice) => {
+    [0, 1, 3, 4].slice(0, rangAvant.length).forEach((position, indice) => {
       const article = rangAvant[indice];
       const centre = enArc(positionsX[position], zRangAvant).setY(dessusComptoir);
       emplacements.set(article.id,
@@ -521,24 +516,30 @@ function garnirCagette(groupe, config, bibliotheque, article, centre, pose, bois
   return { article, exemplaires, centre: contenant.localToWorld(new THREE.Vector3(0, hauteur / 2, 0)), contenant };
 }
 
+/** Échelle de chaque article, calculée une fois (identifiant → échelle). */
+const echellesArticles = new Map();
+
 /**
- * Corbeille ronde en osier, vide, pour le décor.
+ * Échelle à donner aux exemplaires d'un article pour qu'ils mesurent sa
+ * taille réelle (`article.taille`), quelle que soit l'échelle du scan.
  *
- * @param {THREE.Group} groupe - Groupe de l'étal.
- * @param {typeof import('../config.js').CONFIG} config - Configuration globale.
  * @param {import('./modeles3D.js').BibliothequeModeles} bibliotheque - Modèles 3D.
- * @param {THREE.Vector3} centre - Centre du dessous de la corbeille (repère de la scène).
- * @param {PoseContenant} pose - Inclinaison, rotation, rehausse.
- * @param {(repX: number, repY: number, teinte?: number) => THREE.Material} bois - Fabrique de matière bois.
+ * @param {import('./articles.js').Article} article - Article à mesurer.
+ * @returns {number}
  */
-function poserCorbeille(groupe, config, bibliotheque, centre, pose, bois) {
-  const contenant = poserContenant(groupe, centre, { largeur: 0.22, profondeur: 0.22 }, pose, bois);
-  const corbeille = bibliotheque.creer(config.corbeille.modele, config.corbeille.element);
-  if (corbeille) {
-    poserSur(corbeille, new THREE.Vector3());
-    corbeille.name = 'corbeille';
-    contenant.add(corbeille);
+function echelleArticle(bibliotheque, article) {
+  if (!echellesArticles.has(article.id)) {
+    const dimensions = (article.elements ?? [undefined]).map((element) => {
+      const objet = bibliotheque.creer(article.modele, element);
+      if (!objet) {
+        return 0;
+      }
+      const taille = new THREE.Box3().setFromObject(objet).getSize(new THREE.Vector3());
+      return Math.max(taille.x, taille.y, taille.z);
+    });
+    echellesArticles.set(article.id, calculerEchelle(article.taille, dimensions));
   }
+  return echellesArticles.get(article.id);
 }
 
 /** Nombre maximal de couches d'exemplaires dans un contenant. */
@@ -569,7 +570,7 @@ function remplir(contenant, bibliotheque, article, interieur, hauteurFond) {
   if (!reference) {
     return [];
   }
-  const echelle = article.echelle ?? 1;
+  const echelle = echelleArticle(bibliotheque, article);
   const taille = new THREE.Box3().setFromObject(reference).getSize(new THREE.Vector3()).multiplyScalar(echelle);
   const estAllonge = Math.max(taille.x, taille.z) / Math.min(taille.x, taille.z) > RAPPORT_ALLONGE;
 
@@ -641,7 +642,7 @@ function poserEchappe(groupe, bibliotheque, article, point) {
   if (!objet) {
     return null;
   }
-  objet.scale.setScalar(article.echelle ?? 1);
+  objet.scale.setScalar(echelleArticle(bibliotheque, article));
   objet.rotation.set(Math.PI / 2 * 0.9, Math.random() * Math.PI * 2, 0.2);
   poserSur(objet, point);
   objet.name = `article-${article.id}`;
