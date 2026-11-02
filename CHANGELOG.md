@@ -7,6 +7,13 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Non publié]
 
+### Modifié
+- 2026-11-02 — Cagettes pleines : chaque cagette contient autant d'exemplaires
+  qu'elle peut en loger sur 2 couches, 20 au plus (pour ménager le casque).
+
+### Supprimé
+- La goyave (le scan était un fruit coupé en deux) : 24 fruits.
+
 ### Corrigé
 - 2026-11-02 — Tailles : chaque article a sa taille réelle (`taille`, en m) et
   le jeu calcule l'échelle du modèle (les scans n'ont pas d'échelle fiable).

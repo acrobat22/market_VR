@@ -14,7 +14,8 @@
  * @property {string} singulier - Nom affiché sur l'ardoise pour un exemplaire (« 1 citron »).
  * @property {string} pluriel - Nom affiché pour plusieurs exemplaires (« 2 citrons »).
  * @property {string} modele - Nom du dossier du modèle 3D.
- * @property {number} quantite - Nombre d'exemplaires exposés dans la cagette.
+ * @property {number} quantite - Nombre d'exemplaires exposés : la cagette pleine (2 couches),
+ *   20 au plus pour ménager le casque (chaque exemplaire est un objet à dessiner).
  * @property {number} taille - Taille réelle de l'article, en mètres : sa plus grande dimension
  *   (longueur d'une carotte, diamètre d'une pomme). Le modèle est mis à cette taille, quelle
  *   que soit l'échelle du scan (moyenne des variantes : elles gardent leurs différences).
@@ -24,23 +25,23 @@
 
 /** @type {readonly Article[]} */
 export const ARTICLES = Object.freeze([
-  { id: 'pomme', rayon: 'fruits', singulier: 'pomme', pluriel: 'pommes', modele: 'food_apple_01', taille: 0.08, quantite: 9 },
+  { id: 'pomme', rayon: 'fruits', singulier: 'pomme', pluriel: 'pommes', modele: 'food_apple_01', taille: 0.08, quantite: 8 },
   {
     id: 'poire',
     rayon: 'fruits',
     singulier: 'poire', pluriel: 'poires',
     modele: 'food_pears_asian_01',
     taille: 0.11,
-    quantite: 12,
+    quantite: 11,
     elements: ['food_pears_asian_01_a', 'food_pears_asian_01_b', 'food_pears_asian_01_c', 'food_pears_asian_01_d', 'food_pears_asian_01_e'],
   },
-  { id: 'citron', rayon: 'fruits', singulier: 'citron', pluriel: 'citrons', modele: 'lemon', taille: 0.085, quantite: 9 },
-  { id: 'citron-vert', rayon: 'fruits', singulier: 'citron vert', pluriel: 'citrons verts', modele: 'food_lime_01', taille: 0.06, quantite: 12 },
-  { id: 'kiwi', rayon: 'fruits', singulier: 'kiwi', pluriel: 'kiwis', modele: 'food_kiwi_01', taille: 0.065, quantite: 12 },
-  { id: 'avocat', rayon: 'fruits', singulier: 'avocat', pluriel: 'avocats', modele: 'food_avocado_01', taille: 0.11, quantite: 6 },
-  { id: 'grenade', rayon: 'fruits', singulier: 'grenade', pluriel: 'grenades', modele: 'food_pomegranate_01', taille: 0.095, quantite: 6 },
-  { id: 'litchi', rayon: 'fruits', singulier: 'litchi', pluriel: 'litchis', modele: 'food_lychee_01', taille: 0.035, quantite: 16 },
-  { id: 'bananes', rayon: 'fruits', singulier: 'régime de bananes', pluriel: 'régimes de bananes', modele: 'bananas', taille: 0.22, quantite: 1, elements: ['bananas_bunch'] },
+  { id: 'citron', rayon: 'fruits', singulier: 'citron', pluriel: 'citrons', modele: 'lemon', taille: 0.085, quantite: 18 },
+  { id: 'citron-vert', rayon: 'fruits', singulier: 'citron vert', pluriel: 'citrons verts', modele: 'food_lime_01', taille: 0.06, quantite: 20 },
+  { id: 'kiwi', rayon: 'fruits', singulier: 'kiwi', pluriel: 'kiwis', modele: 'food_kiwi_01', taille: 0.065, quantite: 20 },
+  { id: 'avocat', rayon: 'fruits', singulier: 'avocat', pluriel: 'avocats', modele: 'food_avocado_01', taille: 0.11, quantite: 13 },
+  { id: 'grenade', rayon: 'fruits', singulier: 'grenade', pluriel: 'grenades', modele: 'food_pomegranate_01', taille: 0.095, quantite: 8 },
+  { id: 'litchi', rayon: 'fruits', singulier: 'litchi', pluriel: 'litchis', modele: 'food_lychee_01', taille: 0.035, quantite: 20 },
+  { id: 'bananes', rayon: 'fruits', singulier: 'régime de bananes', pluriel: 'régimes de bananes', modele: 'bananas', taille: 0.22, quantite: 3, elements: ['bananas_bunch'] },
   // Fruits du pack KIRI Engine « Fruit and Veg » (CC0), convertis par
   // outils/convertir_kiri.py. L'étal en montre 10 au hasard à chaque partie.
   {
@@ -49,7 +50,7 @@ export const ARTICLES = Object.freeze([
     singulier: 'orange', pluriel: 'oranges',
     modele: 'kiri_orange',
     taille: 0.075,
-    quantite: 9,
+    quantite: 13,
     // A24 (4 cm) et A60 (11 cm) écartées : trop différentes des autres.
     elements: ['A25_Orange', 'A49_Orange'],
   },
@@ -59,7 +60,7 @@ export const ARTICLES = Object.freeze([
     singulier: 'mangue', pluriel: 'mangues',
     modele: 'kiri_mangue',
     taille: 0.12,
-    quantite: 4,
+    quantite: 5,
     elements: ['A29_Mango', 'A114_Mango', 'A115_Mango'],
   },
   {
@@ -68,12 +69,12 @@ export const ARTICLES = Object.freeze([
     singulier: 'pêche', pluriel: 'pêches',
     modele: 'kiri_peche',
     taille: 0.075,
-    quantite: 9,
+    quantite: 13,
     // A12 (5 cm) écartée : trop petite à côté des deux autres.
     elements: ['A28_Peach', 'A51_Peach'],
   },
-  { id: 'prune', rayon: 'fruits', singulier: 'prune', pluriel: 'prunes', modele: 'kiri_prune', taille: 0.05, quantite: 12 },
-  { id: 'clementine', rayon: 'fruits', singulier: 'clémentine', pluriel: 'clémentines', modele: 'kiri_clementine', taille: 0.06, quantite: 12 },
+  { id: 'prune', rayon: 'fruits', singulier: 'prune', pluriel: 'prunes', modele: 'kiri_prune', taille: 0.05, quantite: 20 },
+  { id: 'clementine', rayon: 'fruits', singulier: 'clémentine', pluriel: 'clémentines', modele: 'kiri_clementine', taille: 0.06, quantite: 18 },
   { id: 'kumquat', rayon: 'fruits', singulier: 'kumquat', pluriel: 'kumquats', modele: 'kiri_kumquat', taille: 0.04, quantite: 20 },
   {
     id: 'mangoustan',
@@ -81,7 +82,7 @@ export const ARTICLES = Object.freeze([
     singulier: 'mangoustan', pluriel: 'mangoustans',
     modele: 'kiri_mangoustan',
     taille: 0.065,
-    quantite: 9,
+    quantite: 18,
     elements: ['A127_Mangosteen', 'A129_Mangosteen'],
   },
   {
@@ -90,7 +91,7 @@ export const ARTICLES = Object.freeze([
     singulier: 'papaye', pluriel: 'papayes',
     modele: 'kiri_papaye',
     taille: 0.2,
-    quantite: 2,
+    quantite: 5,
     elements: ['A11_Papaya', 'A54_Papaya'],
   },
   {
@@ -99,17 +100,16 @@ export const ARTICLES = Object.freeze([
     singulier: 'fruit de la passion', pluriel: 'fruits de la passion',
     modele: 'kiri_fruit_passion',
     taille: 0.065,
-    quantite: 12,
+    quantite: 20,
   },
-  { id: 'kaki', rayon: 'fruits', singulier: 'kaki', pluriel: 'kakis', modele: 'kiri_kaki', taille: 0.07, quantite: 9 },
-  { id: 'goyave', rayon: 'fruits', singulier: 'goyave', pluriel: 'goyaves', modele: 'kiri_goyave', taille: 0.075, quantite: 6 },
+  { id: 'kaki', rayon: 'fruits', singulier: 'kaki', pluriel: 'kakis', modele: 'kiri_kaki', taille: 0.07, quantite: 18 },
   {
     id: 'fruit-dragon',
     rayon: 'fruits',
     singulier: 'fruit du dragon', pluriel: 'fruits du dragon',
     modele: 'kiri_fruit_dragon',
     taille: 0.12,
-    quantite: 4,
+    quantite: 8,
   },
   {
     id: 'pomme-cannelle',
@@ -117,7 +117,7 @@ export const ARTICLES = Object.freeze([
     singulier: 'pomme cannelle', pluriel: 'pommes cannelle',
     modele: 'kiri_anone',
     taille: 0.09,
-    quantite: 6,
+    quantite: 8,
   },
   {
     id: 'noix-coco',
@@ -134,7 +134,7 @@ export const ARTICLES = Object.freeze([
     singulier: 'melon', pluriel: 'melons',
     modele: 'kiri_melon',
     taille: 0.15,
-    quantite: 2,
+    quantite: 3,
     // A137 (34 cm) écarté : bien trop gros pour une cagette.
     elements: ['A131_Cantaloupe'],
   },
@@ -146,7 +146,7 @@ export const ARTICLES = Object.freeze([
     singulier: 'carotte', pluriel: 'carottes',
     modele: 'kiri_carotte',
     taille: 0.18,
-    quantite: 8,
+    quantite: 13,
     elements: ['A31_Carrot', 'A103_Carrot', 'A134_Carrot'],
   },
   {
@@ -155,7 +155,7 @@ export const ARTICLES = Object.freeze([
     singulier: 'pomme de terre', pluriel: 'pommes de terre',
     modele: 'kiri_pomme_de_terre',
     taille: 0.08,
-    quantite: 12,
+    quantite: 20,
     elements: ['A18_Potato', 'A19_Potato', 'A20_Potato', 'A23_Potato', 'A36_Potato'],
   },
   {
@@ -164,21 +164,21 @@ export const ARTICLES = Object.freeze([
     singulier: 'chou', pluriel: 'choux',
     modele: 'kiri_chou',
     taille: 0.16,
-    quantite: 3,
+    quantite: 2,
     elements: ['A15_Cabbage', 'A69_Cabbage'],
   },
   { id: 'brocoli', rayon: 'legumes', singulier: 'brocoli', pluriel: 'brocolis', modele: 'kiri_brocoli', taille: 0.16, quantite: 3 },
-  { id: 'concombre', rayon: 'legumes', singulier: 'concombre', pluriel: 'concombres', modele: 'kiri_concombre', taille: 0.22, quantite: 4 },
-  { id: 'aubergine', rayon: 'legumes', singulier: 'aubergine', pluriel: 'aubergines', modele: 'kiri_aubergine', taille: 0.2, quantite: 3 },
+  { id: 'concombre', rayon: 'legumes', singulier: 'concombre', pluriel: 'concombres', modele: 'kiri_concombre', taille: 0.22, quantite: 5 },
+  { id: 'aubergine', rayon: 'legumes', singulier: 'aubergine', pluriel: 'aubergines', modele: 'kiri_aubergine', taille: 0.2, quantite: 5 },
   { id: 'champignon', rayon: 'legumes', singulier: 'champignon', pluriel: 'champignons', modele: 'kiri_champignon', taille: 0.05, quantite: 20 },
-  { id: 'ail', rayon: 'legumes', singulier: 'tête d’ail', pluriel: 'têtes d’ail', modele: 'kiri_ail', taille: 0.055, quantite: 12 },
+  { id: 'ail', rayon: 'legumes', singulier: 'tête d’ail', pluriel: 'têtes d’ail', modele: 'kiri_ail', taille: 0.055, quantite: 20 },
   {
     id: 'courge-butternut',
     rayon: 'legumes',
     singulier: 'courge butternut', pluriel: 'courges butternut',
     modele: 'kiri_courge_butternut',
     taille: 0.22,
-    quantite: 2,
+    quantite: 3,
   },
   {
     id: 'navet',
@@ -186,11 +186,11 @@ export const ARTICLES = Object.freeze([
     singulier: 'navet', pluriel: 'navets',
     modele: 'kiri_navet',
     taille: 0.08,
-    quantite: 6,
+    quantite: 18,
     elements: ['A33_Turnip', 'A94_Turnip'],
   },
   // Oignon : modèle Poly Haven (CC0).
-  { id: 'oignon', rayon: 'legumes', singulier: 'oignon', pluriel: 'oignons', modele: 'yellow_onion', taille: 0.075, quantite: 12 },
+  { id: 'oignon', rayon: 'legumes', singulier: 'oignon', pluriel: 'oignons', modele: 'yellow_onion', taille: 0.075, quantite: 18 },
 ].map(Object.freeze));
 
 /**

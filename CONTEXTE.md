@@ -162,6 +162,9 @@ les briques techniques et les règles d'accessibilité.
 - Comptoir : bord avant à 0,38 m du joueur, 2,10 m de large, 0,62 m de profondeur,
   0,74 m de haut (hauteur de table : joueur assis).
 - Cagettes : 30 × 24 × 10 cm (2026-11-02 ; avant 25 × 21 × 8,5, effet « maquette »).
+- Quantités exposées = capacité de la cagette (2 couches), plafonnée à 20
+  exemplaires (objets à dessiner : ménager le casque). Goyave retirée (scan
+  coupé en deux) : 24 fruits.
 - Articles mis à leur **taille réelle** : champ `taille` (plus grande dimension,
   en m) ; l'échelle est calculée au chargement (`calculerEchelle`, moyenne des
   variantes). Remplace les échelles réglées à la main (audit du 2026-11-02 :
