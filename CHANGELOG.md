@@ -8,6 +8,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 ## [Non publié]
 
 ### Ajouté
+- 2026-10-29 — Ardoise réaliste : surface d'ardoise grainée avec traces de
+  craie mal effacée, cadre en bois 3D (bois de l'étal), texte écrit à la craie
+  en police manuscrite « Patrick Hand » (OFL, copiée dans `ressources/polices/`),
+  cases et coches tracées à la main. Contraste du texte toujours ≥ 7:1.
 - 2026-10-29 — Étape 3b (jeu) : liste de 4 à 6 articles tirée au hasard et
   écrite sur une ardoise suspendue sous l'auvent ; un article de la liste
   lâché au-dessus du panier s'y pose et se coche (case ✔ et nom barré, son

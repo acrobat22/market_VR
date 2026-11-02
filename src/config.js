@@ -169,9 +169,15 @@ export const CONFIG = Object.freeze({
    * assez haute pour ne pas cacher le rang arrière.
    */
   ardoise: Object.freeze({
-    largeur: 0.7,
-    hauteur: 0.32,
+    /** Surface d'ardoise (sans le cadre). */
+    largeur: 0.64,
+    hauteur: 0.26,
+    /** Cadre en bois : largeur des montants et épaisseur. */
+    largeurCadre: 0.03,
+    epaisseurCadre: 0.018,
     position: Object.freeze({ x: 0, y: 1.4, z: -0.36 }),
+    /** Police manuscrite « craie » (Patrick Hand, licence OFL, voir ressources/polices/). */
+    police: './ressources/polices/PatrickHand-Regular.ttf',
     /** Hauteur de la traverse où sont attachées les cordelettes. */
     hauteurAccroche: 1.93,
   }),

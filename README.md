@@ -29,6 +29,7 @@ vendor/three/              Three.js 0.186.1 (copie locale, licence MIT)
 vendor/webxr-input-profiles/  Modèles 3D des mains (licence MIT)
 ressources/modeles/        Modèles 3D photographiés, glTF 1k (Poly Haven, CC0)
 ressources/textures/       Bois « rough_wood », toile « rough_linen » (Poly Haven, CC0)
+ressources/polices/       Police manuscrite « Patrick Hand » de l'ardoise (licence OFL)
 ressources/environnements/ 5 places 360° : Dresde, Ulm, Venise, Fürstenstein, Rome (Poly Haven, CC0)
 src/
   main.js                  Crée les modules et les relie
@@ -43,7 +44,7 @@ src/
   marche/articles.js       Les 12 articles vendus et leurs modèles 3D
   marche/modeles3D.js      Chargement des modèles (tentatives, éléments séparables)
   marche/matieres.js       Bois et toile réalistes, préchargés
-  marche/ardoise.js        Ardoise de la liste, suspendue sous l'auvent (cases cochées et barrées)
+  marche/ardoise.js        Ardoise de la liste écrite à la craie, cadre en bois (cases cochées et barrées)
   marche/etal.js           L'étal : comptoir, auvent, cagettes, corbeilles, panier, décor
   marche/ombreContact.js   Ombre douce au pied des objets
   jeu/listeCourses.js      Logique pure : tirage de la liste au hasard
@@ -80,4 +81,5 @@ node --test
 
 - Code : [MIT](LICENSE).
 - Three.js et modèles des mains : MIT (voir `vendor/`).
+- Police « Patrick Hand » (Patrick Wagesreiter) : [SIL Open Font License 1.1](ressources/polices/OFL.txt).
 - Modèles 3D, textures et places 360° : [Poly Haven](https://polyhaven.com/license), CC0 (domaine public).

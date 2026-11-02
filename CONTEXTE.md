@@ -28,7 +28,7 @@ les briques techniques et les règles d'accessibilité.
 | Liste de courses | **Tirée au hasard** à chaque partie (4 à 6 articles, jamais de doublon) |
 | Accessibilité | Mêmes règles que « construction » : gros texte, contraste ≥ 7:1 (texte sur panneau sombre opaque), pas de chrono, pas d'échec, sons doux désactivables, information jamais portée par la couleur seule |
 | Langue | Français uniquement |
-| Licence | MIT (titulaire « P ») pour le code ; ressources Poly Haven en CC0 |
+| Licence | MIT (titulaire « P ») pour le code ; ressources Poly Haven en CC0 ; police Patrick Hand en OFL 1.1 |
 
 ## 3. Ce qui est fait (étapes 1 et 2)
 
@@ -86,7 +86,12 @@ les briques techniques et les règles d'accessibilité.
   au-dessus du bord), `marche/ardoise.js` (0,70 × 0,32 m, à z = −0,36 sous la
   traverse avant, de 1,24 à 1,56 m ; caméra souris relevée (visée y = 1,03,
   champ 66°) pour la voir en entier sans cacher le rang arrière ; 2 colonnes
-  de 3). Avocat ramené à l'échelle 0,75 (modèle de 14 cm). Un article accepté se pose au fond du
+  de 3). Avocat ramené à l'échelle 0,75 (modèle de 14 cm).
+- **Ardoise réaliste** ✅ (à valider à l'œil) : surface 0,64 × 0,26 m générée
+  par le code (grain, traces d'effacement), cadre en bois 3D de 3 cm (bois de
+  l'étal), texte à la craie en **Patrick Hand** (OFL, choisie pour sa
+  lisibilité ; police système en secours), trait épaissi par un contour, grain
+  de craie appliqué en masque. Texte `#f6f6f0` sur `#2b3532` : contraste ≥ 9:1. Un article accepté se pose au fond du
   panier à l'une des 6 places de `CONFIG.panier.places` et n'en bouge plus.
 - (c) Réussite et « Rejouer » — à faire.
 

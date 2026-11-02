@@ -18,9 +18,9 @@ import { choisirPlace } from './coeur/choixPlace.js';
 import { SessionXR } from './coeur/sessionXR.js';
 import { ARTICLES } from './marche/articles.js';
 import { BibliothequeModeles } from './marche/modeles3D.js';
-import { prechargerMatieres } from './marche/matieres.js';
+import { creerMatiere, prechargerMatieres } from './marche/matieres.js';
 import { construireEtal } from './marche/etal.js';
-import { Ardoise } from './marche/ardoise.js';
+import { Ardoise, chargerPoliceCraie } from './marche/ardoise.js';
 import { Mains } from './entrees/mains.js';
 import { DetecteurPincement } from './entrees/detecteurPincement.js';
 import { Souris } from './entrees/souris.js';
@@ -107,6 +107,10 @@ await Promise.all([
     ...CONFIG.decor.map((element) => element.modele),
   ])]),
   prechargerMatieres(CONFIG.etal.dossierTextures, [CONFIG.etal.textureBois, CONFIG.etal.textureToile]),
+  // Sans la police manuscrite, l'ardoise s'écrit simplement en police système.
+  chargerPoliceCraie(CONFIG.ardoise.police).catch((erreur) => {
+    console.error('[main] Police de l\'ardoise non chargée, police système utilisée :', erreur);
+  }),
 ]);
 
 const etal = construireEtal(CONFIG, bibliotheque);
@@ -141,7 +145,9 @@ let tempsCourant = 0;
 const { tailleMinimale, tailleMaximale } = CONFIG.liste;
 const partie = new Partie(tirerListe(ARTICLES,
   tailleMinimale + Math.floor(Math.random() * (tailleMaximale - tailleMinimale + 1))));
-const ardoise = new Ardoise(CONFIG.ardoise);
+const ardoise = new Ardoise(CONFIG.ardoise, creerMatiere({
+  dossier: CONFIG.etal.dossierTextures, nom: CONFIG.etal.textureBois, repetitionX: 1, repetitionY: 0.3,
+}));
 ardoise.afficher(partie.lignes);
 scene.add(ardoise.objet3D);
 

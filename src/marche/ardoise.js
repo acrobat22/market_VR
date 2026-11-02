@@ -1,18 +1,19 @@
 /**
  * @file Ardoise de la liste de courses, suspendue sous l'auvent.
  *
- * Texte blanc « craie » sur fond ardoise sombre et opaque (contraste ≥ 7:1),
- * dans un cadre en bois. Un article dans le panier est coché ✔ ET barré :
- * l'information n'est jamais portée par la couleur seule.
+ * Vraie ardoise d'écolier : surface d'ardoise grainée avec des traces de craie
+ * mal effacée, cadre en bois (même bois que l'étal), texte écrit à la craie
+ * (police manuscrite Patrick Hand, grain de craie). Le texte reste presque
+ * blanc sur fond sombre et opaque (contraste ≥ 7:1). Un article dans le panier
+ * est coché ✔ ET barré : l'information n'est jamais portée par la couleur seule.
  */
 
 import * as THREE from 'three';
 
-/** Couleurs (blanc sur ardoise : contraste ≈ 13:1). */
+/** Couleurs (craie sur ardoise : contraste ≥ 9:1, même sur les traces d'effacement). */
 const COULEURS = Object.freeze({
-  cadre: '#7a5230',
-  fond: '#263330',
-  craie: '#ffffff',
+  ardoise: '#2b3532',
+  craie: '#f6f6f0',
 });
 
 /** Titre écrit en haut de l'ardoise. */
@@ -21,11 +22,28 @@ const TITRE = 'Ma liste de courses';
 /** Pixels du canevas par mètre d'ardoise (netteté du texte). */
 const PIXELS_PAR_METRE = 1800;
 
-/** Police lisible, présente sur tous les systèmes. */
-const POLICE = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+/** Police « écrite à la main », chargée par `chargerPoliceCraie`. */
+const NOM_POLICE = 'Patrick Hand';
+
+/** Police de secours, si la police manuscrite n'a pas pu être chargée. */
+const POLICE_SECOURS = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
 
 /** Nombre de colonnes d'articles (la liste compte au plus 6 articles). */
 const COLONNES = 2;
+
+/**
+ * Charge la police manuscrite de l'ardoise (fichier local, licence OFL).
+ * À attendre avant le premier affichage ; en cas d'échec, l'ardoise utilise
+ * simplement une police système.
+ *
+ * @param {string} url - Adresse du fichier de police.
+ * @returns {Promise<void>}
+ */
+export async function chargerPoliceCraie(url) {
+  const police = new FontFace(NOM_POLICE, `url(${url})`);
+  await police.load();
+  document.fonts.add(police);
+}
 
 /**
  * Ardoise 3D affichant la liste de courses et les articles cochés.
@@ -33,8 +51,9 @@ const COLONNES = 2;
 export class Ardoise {
   /**
    * @param {typeof import('../config.js').CONFIG.ardoise} reglages - Taille et position.
+   * @param {THREE.Material} matiereCadre - Bois du cadre.
    */
-  constructor(reglages) {
+  constructor(reglages, matiereCadre) {
     this.canevas = document.createElement('canvas');
     this.canevas.width = Math.round(reglages.largeur * PIXELS_PAR_METRE);
     this.canevas.height = Math.round(reglages.hauteur * PIXELS_PAR_METRE);
@@ -42,24 +61,35 @@ export class Ardoise {
     this.texture.colorSpace = THREE.SRGBColorSpace;
     this.texture.anisotropy = 4;
 
-    /** Ardoise et ses deux cordelettes, à ajouter à la scène. */
+    // Surface d'ardoise et grain de la craie : tirés une seule fois, pour que
+    // l'ardoise ne change pas d'aspect quand on coche un article.
+    this.fond = creerSurfaceArdoise(this.canevas.width, this.canevas.height);
+    this.grainCraie = creerGrainCraie(this.canevas.width, this.canevas.height);
+    /** Calque où l'on écrit avant d'y appliquer le grain de la craie. */
+    this.calqueCraie = document.createElement('canvas');
+    this.calqueCraie.width = this.canevas.width;
+    this.calqueCraie.height = this.canevas.height;
+
+    /** Ardoise, cadre et cordelettes, à ajouter à la scène. */
     this.objet3D = new THREE.Group();
     this.objet3D.name = 'ardoise';
     this.objet3D.position.set(reglages.position.x, reglages.position.y, reglages.position.z);
 
     // Non éclairée : couleurs exactes, contraste garanti quelle que soit la lumière.
-    const planche = new THREE.Mesh(
+    const surface = new THREE.Mesh(
       new THREE.PlaneGeometry(reglages.largeur, reglages.hauteur),
       new THREE.MeshBasicMaterial({ map: this.texture, toneMapped: false }),
     );
-    this.objet3D.add(planche);
+    this.objet3D.add(surface);
+    this.objet3D.add(creerCadre(reglages, matiereCadre));
 
-    // Cordelettes : du haut de l'ardoise jusqu'à la traverse de l'auvent.
-    const longueurCorde = reglages.hauteurAccroche - (reglages.position.y + reglages.hauteur / 2);
+    // Cordelettes : du haut du cadre jusqu'à la traverse de l'auvent.
+    const hautCadre = reglages.hauteur / 2 + reglages.largeurCadre;
+    const longueurCorde = reglages.hauteurAccroche - (reglages.position.y + hautCadre);
     const matiereCorde = new THREE.MeshStandardMaterial({ color: 0x6b5a45, roughness: 0.9 });
     for (const cote of [-1, 1]) {
       const corde = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, longueurCorde, 6), matiereCorde);
-      corde.position.set(cote * reglages.largeur * 0.4, reglages.hauteur / 2 + longueurCorde / 2, 0);
+      corde.position.set(cote * reglages.largeur * 0.4, hautCadre + longueurCorde / 2, -0.005);
       this.objet3D.add(corde);
     }
   }
@@ -70,90 +100,203 @@ export class Ardoise {
    * @param {readonly import('../jeu/partie.js').LigneListe[]} lignes - Articles et état coché.
    */
   afficher(lignes) {
-    const contexte = this.#dessinerFond();
     const { width: largeur, height: hauteur } = this.canevas;
-    const marge = largeur * 0.06;
+    const craie = this.calqueCraie.getContext('2d');
+    craie.clearRect(0, 0, largeur, hauteur);
+    craie.fillStyle = COULEURS.craie;
+    craie.strokeStyle = COULEURS.craie;
+    craie.lineCap = 'round';
+    craie.lineJoin = 'round';
+    craie.textBaseline = 'middle';
+    const marge = largeur * 0.05;
 
-    contexte.fillStyle = COULEURS.craie;
-    contexte.font = `bold ${Math.round(hauteur * 0.13)}px ${POLICE}`;
-    contexte.textAlign = 'center';
-    contexte.fillText(TITRE, largeur / 2, hauteur * 0.17, largeur - 2 * marge);
-    contexte.textAlign = 'left';
+    craie.textAlign = 'center';
+    ecrire(craie, TITRE, largeur / 2, hauteur * 0.14, Math.round(hauteur * 0.17), largeur - 2 * marge);
+    craie.textAlign = 'left';
 
     // Articles en colonnes, de haut en bas puis de gauche à droite.
     const rangees = Math.ceil(lignes.length / COLONNES);
     const largeurColonne = (largeur - 2 * marge) / COLONNES;
-    // Écart fixe entre les rangées (3 au plus), même pour une liste courte.
-    const haut = hauteur * 0.39;
-    const pasVertical = hauteur * 0.215;
-    const tailleTexte = Math.round(hauteur * 0.11);
+    const tailleTexte = Math.round(hauteur * 0.15);
     lignes.forEach((ligne, indice) => {
       const x = marge + Math.floor(indice / rangees) * largeurColonne;
-      const y = haut + (indice % rangees) * pasVertical;
-      this.#dessinerLigne(contexte, ligne, x, y, largeurColonne * 0.94, tailleTexte);
+      // Écart fixe entre les rangées (3 au plus), même pour une liste courte.
+      const y = hauteur * (0.38 + (indice % rangees) * 0.24);
+      dessinerLigne(craie, ligne, x, y, largeurColonne * 0.95, tailleTexte);
     });
+
+    // Grain de la craie : de petits manques dans les traits.
+    craie.globalCompositeOperation = 'destination-out';
+    craie.drawImage(this.grainCraie, 0, 0);
+    craie.globalCompositeOperation = 'source-over';
+
+    const contexte = this.canevas.getContext('2d');
+    contexte.drawImage(this.fond, 0, 0);
+    contexte.drawImage(this.calqueCraie, 0, 0);
     this.texture.needsUpdate = true;
   }
+}
 
-  /**
-   * Dessine une ligne : case (cochée ou vide) puis nom de l'article (barré si coché).
-   *
-   * @param {CanvasRenderingContext2D} contexte - Contexte de dessin.
-   * @param {import('../jeu/partie.js').LigneListe} ligne - Article et état.
-   * @param {number} x - Abscisse du bord gauche.
-   * @param {number} y - Ordonnée du milieu de la ligne.
-   * @param {number} largeurMaximale - Largeur disponible.
-   * @param {number} tailleTexte - Taille du texte, en pixels.
-   */
-  #dessinerLigne(contexte, ligne, x, y, largeurMaximale, tailleTexte) {
-    const cote = tailleTexte * 0.8;
-    contexte.strokeStyle = COULEURS.craie;
-    contexte.lineCap = 'round';
-    contexte.lineJoin = 'round';
+/**
+ * Écrit un texte à la craie : le contour épaissit le trait fin de la police
+ * manuscrite, comme une craie appuyée.
+ *
+ * @param {CanvasRenderingContext2D} contexte - Contexte de dessin.
+ * @param {string} texte - Texte à écrire.
+ * @param {number} x - Abscisse (selon l'alignement du contexte).
+ * @param {number} y - Ordonnée du milieu du texte.
+ * @param {number} taille - Taille du texte, en pixels.
+ * @param {number} largeurMaximale - Largeur disponible (le texte est resserré au-delà).
+ */
+function ecrire(contexte, texte, x, y, taille, largeurMaximale) {
+  contexte.font = `${taille}px "${NOM_POLICE}", ${POLICE_SECOURS}`;
+  contexte.lineWidth = taille * 0.045;
+  contexte.fillText(texte, x, y, largeurMaximale);
+  contexte.strokeText(texte, x, y, largeurMaximale);
+}
 
-    // Case : carré vide, et coche ✔ tracée (pas un caractère de police).
+/**
+ * Dessine une ligne : case tracée à la main (cochée ou vide), puis nom de
+ * l'article (barré si coché).
+ *
+ * @param {CanvasRenderingContext2D} contexte - Contexte de dessin.
+ * @param {import('../jeu/partie.js').LigneListe} ligne - Article et état.
+ * @param {number} x - Abscisse du bord gauche.
+ * @param {number} y - Ordonnée du milieu de la ligne.
+ * @param {number} largeurMaximale - Largeur disponible.
+ * @param {number} tailleTexte - Taille du texte, en pixels.
+ */
+function dessinerLigne(contexte, ligne, x, y, largeurMaximale, tailleTexte) {
+  const cote = tailleTexte * 0.62;
+  const haut = y - cote / 2;
+
+  // Case : carré légèrement irrégulier, comme tracé à la main.
+  contexte.lineWidth = tailleTexte * 0.06;
+  contexte.beginPath();
+  contexte.moveTo(x, haut + cote * 0.03);
+  contexte.lineTo(x + cote * 1.02, haut);
+  contexte.lineTo(x + cote, haut + cote * 1.03);
+  contexte.lineTo(x - cote * 0.02, haut + cote);
+  contexte.closePath();
+  contexte.stroke();
+
+  // Coche ✔ tracée (pas un caractère de police), qui déborde un peu de la case.
+  if (ligne.estCochee) {
+    contexte.lineWidth = tailleTexte * 0.1;
+    contexte.beginPath();
+    contexte.moveTo(x + cote * 0.12, y);
+    contexte.lineTo(x + cote * 0.42, y + cote * 0.38);
+    contexte.lineTo(x + cote * 1.1, y - cote * 0.7);
+    contexte.stroke();
+  }
+
+  const xTexte = x + cote * 1.6;
+  const largeurTexte = largeurMaximale - (xTexte - x);
+  ecrire(contexte, ligne.article.nom, xTexte, y, tailleTexte, largeurTexte);
+
+  // Article dans le panier : nom barré d'un trait à main levée, en plus de la coche.
+  if (ligne.estCochee) {
+    const longueur = Math.min(contexte.measureText(ligne.article.nom).width, largeurTexte);
     contexte.lineWidth = tailleTexte * 0.07;
-    contexte.strokeRect(x, y - cote / 2, cote, cote);
-    if (ligne.estCochee) {
-      contexte.lineWidth = tailleTexte * 0.13;
-      contexte.beginPath();
-      contexte.moveTo(x + cote * 0.15, y);
-      contexte.lineTo(x + cote * 0.42, y + cote * 0.32);
-      contexte.lineTo(x + cote * 0.95, y - cote * 0.55);
-      contexte.stroke();
-    }
+    contexte.beginPath();
+    contexte.moveTo(xTexte - tailleTexte * 0.1, y + tailleTexte * 0.04);
+    contexte.lineTo(xTexte + longueur + tailleTexte * 0.1, y - tailleTexte * 0.04);
+    contexte.stroke();
+  }
+}
 
-    const xTexte = x + cote * 1.45;
-    const largeurTexte = largeurMaximale - (xTexte - x);
-    contexte.fillStyle = COULEURS.craie;
-    contexte.font = `bold ${tailleTexte}px ${POLICE}`;
-    contexte.fillText(ligne.article.nom, xTexte, y, largeurTexte);
+/**
+ * Surface d'une ardoise usée : fond mat, grain de la pierre et traces de
+ * craie mal effacée (passages d'éponge). Les traces restent très légères pour
+ * garder le contraste du texte.
+ *
+ * @param {number} largeur - Largeur, en pixels.
+ * @param {number} hauteur - Hauteur, en pixels.
+ * @returns {HTMLCanvasElement}
+ */
+function creerSurfaceArdoise(largeur, hauteur) {
+  const canevas = document.createElement('canvas');
+  canevas.width = largeur;
+  canevas.height = hauteur;
+  const contexte = canevas.getContext('2d');
+  contexte.fillStyle = COULEURS.ardoise;
+  contexte.fillRect(0, 0, largeur, hauteur);
 
-    // Article dans le panier : nom barré, en plus de la coche.
-    if (ligne.estCochee) {
-      const longueur = Math.min(contexte.measureText(ligne.article.nom).width, largeurTexte);
-      contexte.lineWidth = tailleTexte * 0.08;
-      contexte.beginPath();
-      contexte.moveTo(xTexte - tailleTexte * 0.1, y);
-      contexte.lineTo(xTexte + longueur + tailleTexte * 0.1, y);
-      contexte.stroke();
-    }
+  // Traces d'effacement : larges taches de craie très diluée.
+  for (let indice = 0; indice < 9; indice++) {
+    const x = Math.random() * largeur;
+    const y = Math.random() * hauteur;
+    const rayon = (0.15 + Math.random() * 0.25) * largeur;
+    const tache = contexte.createRadialGradient(x, y, 0, x, y, rayon);
+    tache.addColorStop(0, 'rgba(255, 255, 255, 0.045)');
+    tache.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    contexte.save();
+    // Taches étirées dans le sens du geste d'effacement.
+    contexte.translate(x, y);
+    contexte.scale(1, 0.45);
+    contexte.translate(-x, -y);
+    contexte.fillStyle = tache;
+    contexte.fillRect(0, 0, largeur, hauteur / 0.45);
+    contexte.restore();
   }
 
-  /**
-   * Efface l'ardoise et dessine son fond : cadre en bois et surface d'ardoise.
-   *
-   * @returns {CanvasRenderingContext2D}
-   */
-  #dessinerFond() {
-    const contexte = this.canevas.getContext('2d');
-    const { width: largeur, height: hauteur } = this.canevas;
-    const epaisseurCadre = hauteur * 0.05;
-    contexte.fillStyle = COULEURS.cadre;
-    contexte.fillRect(0, 0, largeur, hauteur);
-    contexte.fillStyle = COULEURS.fond;
-    contexte.fillRect(epaisseurCadre, epaisseurCadre, largeur - 2 * epaisseurCadre, hauteur - 2 * epaisseurCadre);
-    contexte.textBaseline = 'middle';
-    return contexte;
+  // Grain de la pierre : points un peu plus clairs ou plus sombres.
+  for (let indice = 0; indice < (largeur * hauteur) / 30; indice++) {
+    contexte.fillStyle = Math.random() < 0.5 ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.12)';
+    contexte.fillRect(Math.random() * largeur, Math.random() * hauteur, 2, 2);
   }
+  return canevas;
+}
+
+/**
+ * Masque de grain de la craie : petits points qui seront retirés des traits.
+ *
+ * @param {number} largeur - Largeur, en pixels.
+ * @param {number} hauteur - Hauteur, en pixels.
+ * @returns {HTMLCanvasElement}
+ */
+function creerGrainCraie(largeur, hauteur) {
+  const canevas = document.createElement('canvas');
+  canevas.width = largeur;
+  canevas.height = hauteur;
+  const contexte = canevas.getContext('2d');
+  for (let indice = 0; indice < (largeur * hauteur) / 14; indice++) {
+    contexte.fillStyle = `rgba(0, 0, 0, ${0.25 + Math.random() * 0.45})`;
+    const taille = 1 + Math.random() * 2;
+    contexte.fillRect(Math.random() * largeur, Math.random() * hauteur, taille, taille);
+  }
+  return canevas;
+}
+
+/**
+ * Cadre en bois autour de l'ardoise : quatre montants et un fond, un peu en
+ * relief devant la surface (l'ardoise paraît enchâssée).
+ *
+ * @param {typeof import('../config.js').CONFIG.ardoise} reglages - Taille de l'ardoise et du cadre.
+ * @param {THREE.Material} matiere - Bois du cadre.
+ * @returns {THREE.Group}
+ */
+function creerCadre(reglages, matiere) {
+  const cadre = new THREE.Group();
+  const { largeur, hauteur, largeurCadre: bord, epaisseurCadre: epaisseur } = reglages;
+  const montants = [
+    // Haut et bas : toute la largeur, coins compris.
+    { l: largeur + 2 * bord, h: bord, x: 0, y: (hauteur + bord) / 2 },
+    { l: largeur + 2 * bord, h: bord, x: 0, y: -(hauteur + bord) / 2 },
+    // Côtés.
+    { l: bord, h: hauteur, x: -(largeur + bord) / 2, y: 0 },
+    { l: bord, h: hauteur, x: (largeur + bord) / 2, y: 0 },
+  ];
+  for (const { l, h, x, y } of montants) {
+    const montant = new THREE.Mesh(new THREE.BoxGeometry(l, h, epaisseur), matiere);
+    // Le cadre dépasse de 4 mm devant la surface.
+    montant.position.set(x, y, 0.004 - epaisseur / 2);
+    montant.castShadow = true;
+    cadre.add(montant);
+  }
+  // Fond : dos de l'ardoise, vu de derrière ou de biais.
+  const dos = new THREE.Mesh(new THREE.BoxGeometry(largeur, hauteur, 0.006), matiere);
+  dos.position.z = -0.0035;
+  cadre.add(dos);
+  return cadre;
 }
