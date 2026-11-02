@@ -99,24 +99,21 @@ async function chargerPlace(tentativesRestantes = 3) {
 }
 chargerPlace();
 
-// Choix de l'étal sur l'accueil. Un seul rayon est prêt pour l'instant (les
-// fruits) : l'étal est construit avec le rayon coché au chargement.
+// Choix de l'étal sur l'accueil : changer de rayon regarnit l'étal sur place.
 const listeRayons = document.getElementById('liste-rayons');
 afficherChoixRayon(listeRayons, RAYONS);
-const articlesEtal = articlesDuRayon(ARTICLES, rayonChoisi(listeRayons));
 
-// Tous les modèles 3D nécessaires : articles de l'étal, contenants et décor.
-// Les textures du bois et de la toile sont préchargées en même temps, pour
-// que l'étal apparaisse d'un coup, déjà texturé.
+// Modèles 3D communs à tous les étals (contenants et décor). Les textures du
+// bois et de la toile sont préchargées en même temps, pour que l'étal
+// apparaisse d'un coup, déjà texturé. Les articles sont chargés par rayon.
 const bibliotheque = new BibliothequeModeles(CONFIG.dossierModeles);
 await Promise.all([
-  bibliotheque.charger([...new Set([
-    ...articlesEtal.map((article) => article.modele),
+  bibliotheque.charger([
     CONFIG.panier.modele,
     CONFIG.corbeille.modele,
     ...CONFIG.etagere.map((element) => element.modele),
     ...CONFIG.decor.map((element) => element.modele),
-  ])]),
+  ]),
   prechargerMatieres(CONFIG.etal.dossierTextures, [CONFIG.etal.textureBois, CONFIG.etal.textureToile]),
   // Sans la police manuscrite, l'ardoise s'écrit simplement en police système.
   chargerPoliceCraie(CONFIG.ardoise.police).catch((erreur) => {
@@ -124,9 +121,10 @@ await Promise.all([
   }),
 ]);
 
-const etal = construireEtal(CONFIG, bibliotheque, articlesEtal);
+// Structure de l'étal, construite une fois ; les cagettes et les articles
+// (la « garniture ») changent avec le rayon et à chaque partie.
+const etal = construireEtal(CONFIG, bibliotheque);
 scene.add(etal.objet3D);
-// Positions à jour avant de sortir les articles de leurs cagettes.
 scene.updateMatrixWorld();
 
 // Sons doux : le contexte audio est réveillé au premier clic sur la page
@@ -152,34 +150,10 @@ document.addEventListener('click', () => sons.reveiller());
 // Temps de la dernière image, utilisé lors des pincements.
 let tempsCourant = 0;
 
-/**
- * Tire une nouvelle liste de courses : 4 à 6 articles, chacun demandé de 1 à
- * 3 fois (sans dépasser ce qui est exposé, ni la contenance du panier).
- *
- * @returns {Partie}
- */
-function tirerPartie() {
-  const { tailleMinimale, tailleMaximale, quantiteMaximale } = CONFIG.liste;
-  const articles = tirerListe(articlesEtal,
-    tailleMinimale + Math.floor(Math.random() * (tailleMaximale - tailleMinimale + 1)));
-  return new Partie(tirerQuantites(
-    articles,
-    (article) => etal.emplacements.get(article.id)?.exemplaires.length ?? 0,
-    { quantiteMaximale, contenancePanier: CONFIG.panier.places.length },
-  ));
-}
-
-let partie = tirerPartie();
 const ardoise = new Ardoise(CONFIG.ardoise, creerMatiere({
   dossier: CONFIG.etal.dossierTextures, nom: CONFIG.etal.textureBois, repetitionX: 1, repetitionY: 0.3,
 }));
 scene.add(ardoise.objet3D);
-
-/** Écrit la liste en cours sur l'ardoise (« 2 pommes », coché quand le compte y est). */
-function afficherListe() {
-  ardoise.afficher(partie.lignes.map((ligne) => ({ texte: libelleLigne(ligne), estCochee: ligne.estCochee })));
-}
-afficherListe();
 
 // Panier : zone où un article lâché compte comme déposé (marge généreuse).
 const { centrePanier } = etal;
@@ -195,6 +169,108 @@ const zonePanier = {
   demiProfondeur: taillePanier.z / 2 + CONFIG.panier.margeDepose,
   hauteurMaximale: hauteurBordPanier + CONFIG.panier.hauteurDepose,
 };
+
+const saisie = new GestionnaireSaisie(CONFIG.saisie);
+
+// État de l'étal en cours : rayon, garniture, articles saisissables, partie.
+/** @type {string | null} */
+let idRayon = null;
+/** @type {import('./marche/etal.js').Garniture | null} */
+let garniture = null;
+/** @type {Exemplaire[]} */
+let exemplaires = [];
+/** @type {Partie | null} */
+let partie = null;
+/** Numéro de la dernière installation demandée (les plus anciennes sont abandonnées). */
+let numeroInstallation = 0;
+
+/**
+ * Tire une nouvelle liste de courses parmi les articles de l'étal : 4 à 6
+ * articles, chacun demandé de 1 à 3 fois (sans dépasser ce qui est exposé, ni
+ * la contenance du panier).
+ *
+ * @returns {Partie}
+ */
+function tirerPartie() {
+  const { tailleMinimale, tailleMaximale, quantiteMaximale } = CONFIG.liste;
+  const articlesExposes = [...garniture.emplacements.values()].map((emplacement) => emplacement.article);
+  const articles = tirerListe(articlesExposes,
+    tailleMinimale + Math.floor(Math.random() * (tailleMaximale - tailleMinimale + 1)));
+  return new Partie(tirerQuantites(
+    articles,
+    (article) => garniture.emplacements.get(article.id)?.exemplaires.length ?? 0,
+    { quantiteMaximale, contenancePanier: CONFIG.panier.places.length },
+  ));
+}
+
+/** Écrit la liste en cours sur l'ardoise (« 2 pommes », coché quand le compte y est). */
+function afficherListe() {
+  ardoise.afficher(partie.lignes.map((ligne) => ({ texte: libelleLigne(ligne), estCochee: ligne.estCochee })));
+}
+
+/**
+ * Retire les cagettes et les articles de l'étal, et libère la mémoire
+ * graphique des cagettes. Les articles, eux, partagent leurs géométries et
+ * leurs textures avec la bibliothèque : on ne les libère pas.
+ */
+function demonterGarniture() {
+  if (!garniture) {
+    return;
+  }
+  for (const exemplaire of exemplaires) {
+    saisie.retirerObjet(exemplaire);
+    scene.remove(exemplaire.objet3D);
+  }
+  exemplaires = [];
+  scene.remove(garniture.objet3D);
+  // Seules les cagettes restent dans la garniture (les articles en ont été sortis).
+  garniture.objet3D.traverse((objet) => {
+    if (!objet.isMesh) {
+      return;
+    }
+    objet.geometry.dispose();
+    for (const matiere of [objet.material].flat()) {
+      Object.values(matiere).filter((valeur) => valeur?.isTexture).forEach((texture) => texture.dispose());
+      matiere.dispose();
+    }
+  });
+  garniture = null;
+}
+
+/**
+ * Installe l'étal d'un rayon et commence une partie. Un rayon plus riche que
+ * l'étal (les fruits) en montre 10 tirés au hasard, différents à chaque partie.
+ *
+ * @param {string} rayon - Identifiant du rayon (voir `rayons.js`).
+ * @returns {Promise<void>}
+ */
+async function installerEtal(rayon) {
+  const numero = ++numeroInstallation;
+  const articlesRayon = articlesDuRayon(ARTICLES, rayon);
+  // Tous les modèles du rayon sont chargés une fois pour toutes.
+  await bibliotheque.charger(articlesRayon.map((article) => article.modele));
+  if (numero !== numeroInstallation) {
+    // Un autre rayon a été choisi pendant le chargement.
+    return;
+  }
+  const articles = tirerListe(articlesRayon, Math.min(CONFIG.etal.nombreCagettes, articlesRayon.length));
+
+  demonterGarniture();
+  garniture = etal.garnir(articles);
+  scene.add(garniture.objet3D);
+  // Positions à jour avant de sortir les articles de leurs cagettes.
+  scene.updateMatrixWorld();
+  exemplaires = [...garniture.emplacements.values()].flatMap(({ article, exemplaires: objets }) =>
+    objets.map((objet) => new Exemplaire(objet, article.id, scene, CONFIG.saisie)));
+  for (const exemplaire of exemplaires) {
+    saisie.ajouterObjet(exemplaire);
+  }
+
+  idRayon = rayon;
+  partie = tirerPartie();
+  afficherListe();
+  boutonRejouer.objet3D.visible = false;
+}
 
 /**
  * Lâché au-dessus du panier, un article de la liste y entre et se coche ;
@@ -238,30 +314,18 @@ boutonRejouer.objet3D.position.set(centrePanier.x, hauteurBordPanier + CONFIG.bo
 boutonRejouer.objet3D.visible = false;
 scene.add(boutonRejouer.objet3D);
 
-/**
- * Nouvelle partie : les articles du panier retournent à leur place, une
- * nouvelle liste est tirée et écrite sur l'ardoise.
- */
+/** Nouvelle partie sur le même étal : il est regarni, et une nouvelle liste est tirée. */
 function commencerNouvellePartie() {
-  for (const exemplaire of exemplaires) {
-    if (exemplaire.estDansPanier) {
-      // De retour à sa place, il redeviendra saisissable (voir la boucle de rendu).
-      exemplaire.estDansPanier = false;
-      exemplaire.renvoyer(tempsCourant);
-    }
-  }
-  partie = tirerPartie();
-  afficherListe();
-  boutonRejouer.objet3D.visible = false;
+  installerEtal(idRayon).catch((erreur) => console.error('[main] Nouvelle partie impossible :', erreur));
 }
 
-// Chaque fruit ou pain de l'étal devient saisissable.
-const saisie = new GestionnaireSaisie(CONFIG.saisie);
-const exemplaires = [...etal.emplacements.values()].flatMap(({ article, exemplaires: objets }) =>
-  objets.map((objet) => new Exemplaire(objet, article.id, scene, CONFIG.saisie)));
-for (const exemplaire of exemplaires) {
-  saisie.ajouterObjet(exemplaire);
-}
+// Changer de rayon sur l'accueil regarnit l'étal aussitôt.
+listeRayons.addEventListener('change', () => {
+  installerEtal(rayonChoisi(listeRayons)).catch((erreur) => {
+    console.error('[main] Changement d\'étal impossible :', erreur);
+  });
+});
+await installerEtal(rayonChoisi(listeRayons));
 
 /**
  * Réactions aux pincements, partagées par les mains (VR) et la souris (sans casque).

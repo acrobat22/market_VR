@@ -21,13 +21,17 @@ test('au moins un rayon est disponible', () => {
   assert.ok(RAYONS.some((rayon) => rayon.disponible));
 });
 
-test('un étal disponible a assez d’articles pour la plus longue liste, et tient sur l’étal', () => {
+test('un étal disponible a assez d’articles pour la plus longue liste', () => {
   for (const rayon of RAYONS.filter((rayonMarche) => rayonMarche.disponible)) {
     const nombre = articlesDuRayon(ARTICLES, rayon.id).length;
     assert.ok(nombre >= CONFIG.liste.tailleMaximale, `${rayon.id} : ${nombre} articles`);
-    // 6 cagettes au rang arrière et 4 au rang avant.
-    assert.ok(nombre <= 10, `${rayon.id} : ${nombre} articles`);
   }
+});
+
+test('l’étal de légumes ne vend que des légumes', () => {
+  const ids = articlesDuRayon(ARTICLES, 'legumes').map((article) => article.id);
+  assert.ok(ids.includes('carotte') && ids.includes('pomme-de-terre'));
+  assert.ok(!ids.includes('pomme') && !ids.includes('croissant'));
 });
 
 test('l’étal de fruits ne vend que des fruits', () => {

@@ -16,7 +16,7 @@
 /** @type {readonly Rayon[]} */
 export const RAYONS = Object.freeze([
   { id: 'fruits', nom: 'Fruits', disponible: true },
-  { id: 'legumes', nom: 'Légumes', disponible: false },
+  { id: 'legumes', nom: 'Légumes', disponible: true },
   { id: 'poissons', nom: 'Poissons', disponible: false },
   { id: 'boulangerie', nom: 'Pains et viennoiseries', disponible: false },
 ].map(Object.freeze));

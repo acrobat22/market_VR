@@ -96,6 +96,8 @@ export const CONFIG = Object.freeze({
   etal: Object.freeze({
     /** Distance entre le joueur et le bord avant du comptoir. */
     distanceComptoir: 0.38,
+    /** Nombre de cagettes : 6 au rang arrière, 4 au rang avant (un rayon plus riche en montre autant, au hasard). */
+    nombreCagettes: 10,
     largeur: 1.9,
     profondeur: 0.62,
     hauteur: 0.74,
@@ -222,7 +224,7 @@ export const CONFIG = Object.freeze({
    * Articles dont un exemplaire s'est « échappé » sur le comptoir, devant le
    * gradin (cagettes éloignées du panier, pour ne pas les confondre avec lui).
    */
-  echappes: Object.freeze(['pomme', 'poire', 'kiwi']),
+  echappes: Object.freeze(['pomme', 'poire', 'kiwi', 'pomme-de-terre']),
 
   /** Objets posés sur l'étagère du fond, pour le décor. */
   etagere: Object.freeze([

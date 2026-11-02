@@ -19,7 +19,7 @@ Le contexte complet, les décisions et l'état d'avancement sont dans
 | 1 | Socle (projet, modules communs, tirage de la liste) | ✅ |
 | 2 | Décor : place tirée au hasard parmi 5, étal garni d'objets photographiés | ✅ à valider |
 | 3 | Jeu : ardoise, saisie, panier, quantités, réussite et « Rejouer » | ✅ à valider |
-| 4 | Un étal par thème (fruits, légumes, poissons, pains et viennoiseries), choisi sur l'accueil | en cours : choix et étal de fruits faits ; autres étals « bientôt » (modèles 3D CC0 à trouver) |
+| 4 | Un étal par thème (fruits, légumes, poissons, pains et viennoiseries), choisi sur l'accueil | en cours : fruits (25, dont 10 au hasard par partie) et légumes (10) faits ; poissons et pains « Bientôt » (modèles CC0 à trouver) |
 
 ## Structure
 
@@ -29,7 +29,8 @@ styles/accueil.css         Styles de la page (contraste ≥ 7:1)
 serveur.py                 Serveur local sans cache
 vendor/three/              Three.js 0.186.1 (copie locale, licence MIT)
 vendor/webxr-input-profiles/  Modèles 3D des mains (licence MIT)
-ressources/modeles/        Modèles 3D photographiés, glTF 1k (Poly Haven, CC0)
+ressources/modeles/        Modèles 3D photographiés, glTF 1k (Poly Haven et KIRI Engine, CC0)
+outils/convertir_kiri.py   Conversion FBX → glTF des modèles du pack KIRI (script Blender)
 ressources/textures/       Bois « rough_wood », toile « rough_linen » (Poly Haven, CC0)
 ressources/polices/       Police manuscrite « Patrick Hand » de l'ardoise (licence OFL)
 ressources/environnements/ 5 places 360° : Dresde, Ulm, Venise, Fürstenstein, Rome (Poly Haven, CC0)
@@ -74,6 +75,17 @@ Une place différente est affichée à chaque chargement. Pour en imposer une
 `?place=` à l'adresse : `dresde`, `ulm`, `venise`, `furstenstein` ou `rome`,
 par exemple <http://localhost:8000/?place=venise>.
 
+## Ajouter un modèle du pack KIRI
+
+Placer le pack téléchargé à la racine (`KIRI_Asset_Pack_Fruit_and_Veg/`, ignoré par git), puis :
+
+```sh
+/Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup \
+  -P outils/convertir_kiri.py -- kiri_carotte A31_Carrot A103_Carrot A134_Carrot
+```
+
+Ensuite, ajouter l'article dans `src/marche/articles.js` (rayon, noms, modèle, variantes).
+
 ## Tests
 
 ```sh
@@ -85,4 +97,6 @@ node --test
 - Code : [MIT](LICENSE).
 - Three.js et modèles des mains : MIT (voir `vendor/`).
 - Police « Patrick Hand » (Patrick Wagesreiter) : [SIL Open Font License 1.1](ressources/polices/OFL.txt).
+- Fruits et légumes « kiri_* » : pack [KIRI Engine « Fruit and Veg »](https://www.kiriengine.app/blender-addon/fruit-and-veg-asset-pack-by-kiri-engine), CC0.
+  Le pack lui-même n'est pas dans le dépôt (KIRI demande de ne pas le redistribuer tel quel) : seuls les modèles convertis y sont.
 - Modèles 3D, textures et places 360° : [Poly Haven](https://polyhaven.com/license), CC0 (domaine public).

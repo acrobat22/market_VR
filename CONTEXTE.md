@@ -114,9 +114,26 @@ les briques techniques et les règles d'accessibilité.
   `construireEtal(config, bibliotheque, articles)` : rang avant = moitié des
   articles (4 max), rang arrière = reste (6 max). Corbeilles vides (décor :
   leurs bords cachaient les pains). Fruits : 9 avec le litchi.
-- À faire avec le 2ᵉ étal : reconstruire l'étal quand on change de rayon
-  (aujourd'hui construit une fois au chargement), décor propre à chaque étal
-  (glace pilée et toile bleue pour le poisson, plateaux bas pour les pains).
+- ✅ **Légumes** (10, pack KIRI) et **fruits** (25 : 10 Poly Haven + 15 KIRI ;
+  **10 tirés au hasard à chaque partie**, décidé le 2026-11-02).
+- ✅ **Changement d'étal sans recharger** (décidé le 2026-11-02) :
+  `construireEtal` → structure + `garnir(articles)` ; `main.js` →
+  `installerEtal(rayon)` (charge les modèles du rayon une fois, démonte la
+  garniture et libère la mémoire des cagettes, regarnit, nouvelle partie),
+  utilisé au changement de rayon, à « Rejouer », au retour à l'accueil.
+- Pack KIRI : `KIRI_Asset_Pack_Fruit_and_Veg/` à la racine (9,6 Go, **ignoré
+  par git**) ; niveau « Mid » (~1 000 faces, textures 1k) ; conversion par
+  `outils/convertir_kiri.py` (Blender 5.2 installé). Les FBX ne référencent pas
+  leurs textures : matière reconstruite, ORM regroupé. Variantes écartées
+  (tailles incohérentes) : orange A24/A60, pêche A12, melon A137. Échelles
+  corrigées : ail 1,5, champignon 1,7, aubergine 0,75, brocoli 0,8, butternut
+  0,75, mangue 0,8, pomme cannelle 2.
+- Oignon et patate douce (Poly Haven) retirés des articles (réserve : modèles
+  toujours dans `ressources/modeles/`). Ni pain ni poisson dans le pack KIRI.
+- Reste à faire : décor propre à chaque étal (glace pilée et toile bleue pour
+  le poisson, plateaux bas pour les pains), gros fruits en décor au sol
+  (pastèque), étals poissons et pains (modèles CC0 à trouver ; piste : scans
+  faits soi-même avec l'application KIRI Engine).
 - Modèles **CC0 uniquement** (poissons compris). État des recherches :
   fruits OK (Poly Haven, + litchi `food_lychee_01`) ; légumes : Poly Haven n'a
   que patate douce, oignon, gingembre → pack **KIRI Engine « Fruit and Veg »**

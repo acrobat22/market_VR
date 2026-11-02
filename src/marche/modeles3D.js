@@ -32,12 +32,14 @@ export class BibliothequeModeles {
   /**
    * Charge des modèles (en parallèle). Un modèle introuvable est signalé
    * dans la console et ignoré : le reste du marché s'affiche quand même.
+   * Un modèle déjà chargé n'est pas rechargé (changement d'étal).
    *
    * @param {string[]} noms - Noms des dossiers de modèles.
    * @returns {Promise<void>}
    */
   async charger(noms) {
-    await Promise.all(noms.map(async (nom) => {
+    const nouveaux = [...new Set(noms)].filter((nom) => !this.modeles.has(nom));
+    await Promise.all(nouveaux.map(async (nom) => {
       try {
         const gltf = await this.#chargerAvecReprises(`${this.dossier}${nom}/${nom}.gltf`);
         gltf.scene.traverse((objet) => {

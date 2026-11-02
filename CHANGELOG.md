@@ -8,6 +8,22 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 ## [Non publié]
 
 ### Ajouté
+- 2026-11-02 — Étal de légumes : carotte, pomme de terre, chou, brocoli,
+  concombre, aubergine, champignon, ail, courge butternut, navet (pack KIRI
+  Engine « Fruit and Veg », CC0), avec plusieurs variantes par légume.
+- 2026-11-02 — 15 fruits de plus (orange, mangue, pêche, prune, clémentine,
+  kumquat, mangoustan, papaye, fruit de la passion, kaki, goyave, fruit du
+  dragon, pomme cannelle, noix de coco, melon) : 25 fruits, l'étal en montre
+  10 au hasard à chaque partie.
+- Changer d'étal sur l'accueil le regarnit aussitôt, sans recharger la page ;
+  « Rejouer » regarnit l'étal (nouveaux fruits) et tire une nouvelle liste.
+- `outils/convertir_kiri.py` : conversion FBX → glTF des modèles KIRI avec
+  Blender (matière reconstruite, rugosité et ombrage regroupés).
+
+### Modifié
+- L'étal est construit en deux temps : structure (une fois) et garniture
+  (cagettes et articles, remplacée à chaque partie ou changement d'étal).
+- Plus de fruit « échappé » posé devant le panier (on le croyait déjà dedans).
 - 2026-11-02 — Étape 4 (début) : choix de l'étal sur la page d'accueil
   (Fruits, Légumes, Poissons, Pains et viennoiseries ; les trois derniers
   « Bientôt » tant que leurs modèles CC0 manquent). Chaque article appartient à

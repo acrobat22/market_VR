@@ -22,23 +22,31 @@ import { creerMatiere } from './matieres.js';
  */
 
 /**
- * @typedef {object} Etal
- * @property {THREE.Group} objet3D - Tout l'étal, à ajouter à la scène.
+ * @typedef {object} Garniture
+ * @property {THREE.Group} objet3D - Cagettes et articles, à ajouter à la scène.
  * @property {Map<string, EmplacementArticle>} emplacements - Articles présentés, par identifiant.
- * @property {THREE.Object3D | null} panier - Panier du joueur.
- * @property {THREE.Vector3} centrePanier - Centre du fond du panier (repère de la scène).
  */
 
 /**
- * Construit l'étal complet.
+ * @typedef {object} Etal
+ * @property {THREE.Group} objet3D - Structure de l'étal (sans les articles), à ajouter à la scène.
+ * @property {THREE.Object3D | null} panier - Panier du joueur.
+ * @property {THREE.Vector3} centrePanier - Centre du fond du panier (repère de la scène).
+ * @property {(articles: readonly import('./articles.js').Article[]) => Garniture} garnir
+ *   Crée les cagettes garnies des articles donnés (10 au plus : jusqu'à 6 au
+ *   rang arrière, 4 au rang avant). Peut être rappelée pour changer d'articles.
+ */
+
+/**
+ * Construit la structure de l'étal : comptoir, auvent, panier du joueur,
+ * corbeilles, étagère et décor. Les articles sont posés à part, par `garnir`,
+ * pour pouvoir changer d'articles (de rayon, ou de partie) sans tout reconstruire.
  *
  * @param {typeof import('../config.js').CONFIG} config - Configuration globale.
  * @param {import('./modeles3D.js').BibliothequeModeles} bibliotheque - Modèles 3D chargés.
- * @param {readonly import('./articles.js').Article[]} articles - Articles du rayon (10 au plus :
- *   jusqu'à 6 au rang arrière, 4 au rang avant).
  * @returns {Etal}
  */
-export function construireEtal(config, bibliotheque, articles) {
+export function construireEtal(config, bibliotheque) {
   const reglages = config.etal;
   const groupe = new THREE.Group();
   groupe.name = 'etal';
@@ -59,13 +67,6 @@ export function construireEtal(config, bibliotheque, articles) {
   const zRangAvant = avant - 0.05 - config.cagette.profondeur / 2;
   const zRangArriere = arriere + reglages.profondeurGradin / 2;
 
-  const emplacements = new Map();
-  // Le rang avant (à portée de main) prend la moitié des articles, 4 au plus ;
-  // le reste va au rang arrière, 6 au plus.
-  const nombreAvant = Math.min(4, Math.floor(articles.length / 2));
-  const rangArriere = articles.slice(0, Math.min(6, articles.length - nombreAvant));
-  const rangAvant = articles.slice(rangArriere.length, rangArriere.length + nombreAvant);
-
   // Disposition « vivante » : rangs en léger arc tourné vers le joueur, petits
   // écarts d'angle et de position, cagettes du fond inclinées et rehaussées.
   const pose = (centre, extra) => {
@@ -78,17 +79,6 @@ export function construireEtal(config, bibliotheque, articles) {
     z + reglages.courbureRangs * x * x + (Math.random() - 0.5) * reglages.desordrePosition,
   );
 
-  // Rang arrière : 6 cagettes sur le gradin, inclinées, à des hauteurs variées.
-  repartir(rangArriere.length, config.cagette.largeur, 0.03).forEach((x, indice) => {
-    const centre = enArc(x, zRangArriere).setY(dessusGradin);
-    const extra = {
-      inclinaison: reglages.inclinaisonRangArriere,
-      rehausse: reglages.rehausses[indice % reglages.rehausses.length],
-    };
-    emplacements.set(rangArriere[indice].id,
-      garnirCagette(groupe, config, bibliotheque, rangArriere[indice], centre, pose(centre, extra), bois));
-  });
-
   // Rang avant : corbeille, 2 cagettes, panier du joueur, 2 cagettes, corbeille.
   const largeurPanier = 0.42;
   const largeurCorbeille = 0.24;
@@ -98,28 +88,6 @@ export function construireEtal(config, bibliotheque, articles) {
   for (const position of [0, 6]) {
     const centre = enArc(positionsX[position], zRangAvant).setY(dessusComptoir);
     poserCorbeille(groupe, config, bibliotheque, centre, pose(centre, { inclinaison: 0.12 }), bois);
-  }
-  [1, 2, 4, 5].slice(0, rangAvant.length).forEach((position, indice) => {
-    const article = rangAvant[indice];
-    const centre = enArc(positionsX[position], zRangAvant).setY(dessusComptoir);
-    emplacements.set(article.id,
-      garnirCagette(groupe, config, bibliotheque, article, centre, pose(centre, {}), bois));
-  });
-
-  // Quelques fruits « échappés », couchés sur le comptoir devant le rang arrière.
-  const zEchappes = arriere + reglages.profondeurGradin + 0.03;
-  for (const id of config.echappes) {
-    const emplacement = emplacements.get(id);
-    if (emplacement) {
-      const objet = poserEchappe(groupe, bibliotheque, emplacement.article, new THREE.Vector3(
-        emplacement.centre.x + (Math.random() - 0.5) * 0.1,
-        dessusComptoir,
-        zEchappes + (Math.random() - 0.5) * 0.03,
-      ));
-      if (objet) {
-        emplacement.exemplaires.push(objet);
-      }
-    }
   }
 
   // Panier du joueur, au centre du rang avant.
@@ -151,7 +119,58 @@ export function construireEtal(config, bibliotheque, articles) {
     }
   }
 
-  return { objet3D: groupe, emplacements, panier, centrePanier };
+  /** @type {Etal['garnir']} */
+  const garnir = (articles) => {
+    const garniture = new THREE.Group();
+    garniture.name = 'garniture';
+    const emplacements = new Map();
+
+    // Le rang avant (à portée de main) prend la moitié des articles, 4 au plus ;
+    // le reste va au rang arrière, 6 au plus.
+    const nombreAvant = Math.min(4, Math.floor(articles.length / 2));
+    const rangArriere = articles.slice(0, Math.min(6, articles.length - nombreAvant));
+    const rangAvant = articles.slice(rangArriere.length, rangArriere.length + nombreAvant);
+
+    // Rang arrière : cagettes sur le gradin, inclinées, à des hauteurs variées.
+    repartir(rangArriere.length, config.cagette.largeur, 0.03).forEach((x, indice) => {
+      const centre = enArc(x, zRangArriere).setY(dessusGradin);
+      const extra = {
+        inclinaison: reglages.inclinaisonRangArriere,
+        rehausse: reglages.rehausses[indice % reglages.rehausses.length],
+      };
+      emplacements.set(rangArriere[indice].id,
+        garnirCagette(garniture, config, bibliotheque, rangArriere[indice], centre, pose(centre, extra), bois));
+    });
+
+    // Rang avant : cagettes de part et d'autre du panier.
+    [1, 2, 4, 5].slice(0, rangAvant.length).forEach((position, indice) => {
+      const article = rangAvant[indice];
+      const centre = enArc(positionsX[position], zRangAvant).setY(dessusComptoir);
+      emplacements.set(article.id,
+        garnirCagette(garniture, config, bibliotheque, article, centre, pose(centre, {}), bois));
+    });
+
+    // Quelques fruits « échappés », couchés sur le comptoir devant le rang arrière.
+    const zEchappes = arriere + reglages.profondeurGradin + 0.03;
+    for (const id of config.echappes) {
+      const emplacement = emplacements.get(id);
+      // Pas d'échappé devant le panier : on le croirait déjà dans le panier.
+      const devantPanier = emplacement && Math.abs(emplacement.centre.x - centrePanier.x) < largeurPanier / 2 + 0.05;
+      if (emplacement && !devantPanier) {
+        const objet = poserEchappe(garniture, bibliotheque, emplacement.article, new THREE.Vector3(
+          emplacement.centre.x + (Math.random() - 0.5) * 0.1,
+          dessusComptoir,
+          zEchappes + (Math.random() - 0.5) * 0.03,
+        ));
+        if (objet) {
+          emplacement.exemplaires.push(objet);
+        }
+      }
+    }
+    return { objet3D: garniture, emplacements };
+  };
+
+  return { objet3D: groupe, panier, centrePanier, garnir };
 }
 
 /**

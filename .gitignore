@@ -10,3 +10,7 @@ erreurs.log
 
 # Images d’inspiration (droits d’auteur de tiers : ne jamais publier)
 imagesExemples/
+
+# Pack KIRI Engine « Fruit and Veg » (CC0, mais à ne pas redistribuer tel quel :
+# seuls les modèles convertis vont dans ressources/modeles/)
+KIRI_Asset_Pack_Fruit_and_Veg/
