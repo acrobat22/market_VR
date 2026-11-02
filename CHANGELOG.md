@@ -8,6 +8,15 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 ## [Non publié]
 
 ### Ajouté
+- 2026-11-02 — Étape 4 (début) : choix de l'étal sur la page d'accueil
+  (Fruits, Légumes, Poissons, Pains et viennoiseries ; les trois derniers
+  « Bientôt » tant que leurs modèles CC0 manquent). Chaque article appartient à
+  un rayon ; l'étal et la liste ne contiennent que les articles du rayon choisi.
+  Étal de fruits : 9 fruits, avec le litchi (Poly Haven, CC0). 4 tests de plus.
+
+### Modifié
+- Les corbeilles du bout du rang avant sont désormais vides (décor) : leurs
+  bords cachaient les pains. Pains et oignons iront sur leurs propres étals.
 - 2026-11-02 — Quantités : chaque article de la liste est demandé de 1 à 3 fois
   (sans dépasser le stock de l'étal ni les 12 places du panier) ; l'ardoise
   écrit « 1 citron », « 2 pommes », et « 2 pommes (encore 1) » en cours.

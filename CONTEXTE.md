@@ -108,6 +108,15 @@ les briques techniques et les règles d'accessibilité.
 **Étape 4 — Un étal par thème** (décidé le 2026-11-02, à faire)
 - 4 étals : **fruits, légumes, poissons, pains et viennoiseries** ; choix
   sur la page d'accueil ; la liste est tirée dans le thème de l'étal.
+- ✅ (branche `fonctionnalite/etals-themes`) : `marche/rayons.js` (`RAYONS`
+  avec `disponible`, `articlesDuRayon`), champ `rayon` des articles,
+  `interface/choixRayon.js` (cartes radio générées, « Bientôt » désactivé),
+  `construireEtal(config, bibliotheque, articles)` : rang avant = moitié des
+  articles (4 max), rang arrière = reste (6 max). Corbeilles vides (décor :
+  leurs bords cachaient les pains). Fruits : 9 avec le litchi.
+- À faire avec le 2ᵉ étal : reconstruire l'étal quand on change de rayon
+  (aujourd'hui construit une fois au chargement), décor propre à chaque étal
+  (glace pilée et toile bleue pour le poisson, plateaux bas pour les pains).
 - Modèles **CC0 uniquement** (poissons compris). État des recherches :
   fruits OK (Poly Haven, + litchi `food_lychee_01`) ; légumes : Poly Haven n'a
   que patate douce, oignon, gingembre → pack **KIRI Engine « Fruit and Veg »**

@@ -148,6 +148,12 @@ h1 {
   font-weight: 800;
 }
 
+/* Pas encore disponible : bordure en pointillés ET mention « Bientôt » (jamais la couleur seule). */
+.carte-modele:has(input:disabled) {
+  border-style: dashed;
+  cursor: not-allowed;
+}
+
 /* Focus clavier bien visible sur la carte entière. */
 .carte-modele:has(input:focus-visible) {
   outline: 4px solid var(--couleur-texte);

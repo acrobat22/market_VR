@@ -1,6 +1,7 @@
 /**
  * @file Étal de marché : comptoir en bois, poteaux, auvent rayé, étagère,
- * cagettes et corbeilles garnies des articles, panier du joueur, décor.
+ * cagettes garnies des articles du rayon, corbeilles décoratives, panier du
+ * joueur, décor.
  *
  * Le joueur est assis à l'origine, face à l'étal (vers -z). Le rang avant
  * est à portée de main ; le rang arrière, surélevé, demande de se pencher
@@ -10,15 +11,14 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
-import { ARTICLES } from './articles.js';
 import { creerMatiere } from './matieres.js';
 
 /**
  * @typedef {object} EmplacementArticle
  * @property {import('./articles.js').Article} article - Article présenté.
- * @property {THREE.Object3D[]} exemplaires - Exemplaires posés dans la cagette ou la corbeille.
+ * @property {THREE.Object3D[]} exemplaires - Exemplaires posés dans la cagette.
  * @property {THREE.Vector3} centre - Centre du contenant (repère de la scène).
- * @property {THREE.Group} contenant - Groupe local du contenant (cagette ou corbeille).
+ * @property {THREE.Group} contenant - Groupe local de la cagette.
  */
 
 /**
@@ -34,9 +34,11 @@ import { creerMatiere } from './matieres.js';
  *
  * @param {typeof import('../config.js').CONFIG} config - Configuration globale.
  * @param {import('./modeles3D.js').BibliothequeModeles} bibliotheque - Modèles 3D chargés.
+ * @param {readonly import('./articles.js').Article[]} articles - Articles du rayon (10 au plus :
+ *   jusqu'à 6 au rang arrière, 4 au rang avant).
  * @returns {Etal}
  */
-export function construireEtal(config, bibliotheque) {
+export function construireEtal(config, bibliotheque, articles) {
   const reglages = config.etal;
   const groupe = new THREE.Group();
   groupe.name = 'etal';
@@ -58,9 +60,11 @@ export function construireEtal(config, bibliotheque) {
   const zRangArriere = arriere + reglages.profondeurGradin / 2;
 
   const emplacements = new Map();
-  const articlesCagettes = ARTICLES.filter((article) => !config.corbeille.articles.includes(article.id));
-  const rangArriere = articlesCagettes.slice(0, 6);
-  const rangAvant = articlesCagettes.slice(6);
+  // Le rang avant (à portée de main) prend la moitié des articles, 4 au plus ;
+  // le reste va au rang arrière, 6 au plus.
+  const nombreAvant = Math.min(4, Math.floor(articles.length / 2));
+  const rangArriere = articles.slice(0, Math.min(6, articles.length - nombreAvant));
+  const rangAvant = articles.slice(rangArriere.length, rangArriere.length + nombreAvant);
 
   // Disposition « vivante » : rangs en léger arc tourné vers le joueur, petits
   // écarts d'angle et de position, cagettes du fond inclinées et rehaussées.
@@ -91,13 +95,11 @@ export function construireEtal(config, bibliotheque) {
   const largeurs = [largeurCorbeille, config.cagette.largeur, config.cagette.largeur, largeurPanier,
     config.cagette.largeur, config.cagette.largeur, largeurCorbeille];
   const positionsX = repartirLargeurs(largeurs, 0.03);
-  const corbeilles = config.corbeille.articles.map((id) => ARTICLES.find((article) => article.id === id));
-  [[0, corbeilles[0]], [6, corbeilles[1]]].forEach(([position, article]) => {
+  for (const position of [0, 6]) {
     const centre = enArc(positionsX[position], zRangAvant).setY(dessusComptoir);
-    emplacements.set(article.id,
-      garnirCorbeille(groupe, config, bibliotheque, article, centre, pose(centre, { inclinaison: 0.12 }), bois));
-  });
-  [1, 2, 4, 5].forEach((position, indice) => {
+    poserCorbeille(groupe, config, bibliotheque, centre, pose(centre, { inclinaison: 0.12 }), bois);
+  }
+  [1, 2, 4, 5].slice(0, rangAvant.length).forEach((position, indice) => {
     const article = rangAvant[indice];
     const centre = enArc(positionsX[position], zRangAvant).setY(dessusComptoir);
     emplacements.set(article.id,
@@ -501,28 +503,23 @@ function garnirCagette(groupe, config, bibliotheque, article, centre, pose, bois
 }
 
 /**
- * Corbeille ronde en osier garnie d'exemplaires (pains).
+ * Corbeille ronde en osier, vide, pour le décor.
  *
  * @param {THREE.Group} groupe - Groupe de l'étal.
  * @param {typeof import('../config.js').CONFIG} config - Configuration globale.
  * @param {import('./modeles3D.js').BibliothequeModeles} bibliotheque - Modèles 3D.
- * @param {import('./articles.js').Article} article - Article présenté.
  * @param {THREE.Vector3} centre - Centre du dessous de la corbeille (repère de la scène).
  * @param {PoseContenant} pose - Inclinaison, rotation, rehausse.
  * @param {(repX: number, repY: number, teinte?: number) => THREE.Material} bois - Fabrique de matière bois.
- * @returns {EmplacementArticle}
  */
-function garnirCorbeille(groupe, config, bibliotheque, article, centre, pose, bois) {
+function poserCorbeille(groupe, config, bibliotheque, centre, pose, bois) {
   const contenant = poserContenant(groupe, centre, { largeur: 0.22, profondeur: 0.22 }, pose, bois);
   const corbeille = bibliotheque.creer(config.corbeille.modele, config.corbeille.element);
   if (corbeille) {
     poserSur(corbeille, new THREE.Vector3());
-    corbeille.name = `corbeille-${article.id}`;
+    corbeille.name = 'corbeille';
     contenant.add(corbeille);
   }
-  const exemplaires = remplir(contenant, bibliotheque, article, { largeur: 0.17, profondeur: 0.17 }, 0.03);
-  contenant.updateWorldMatrix(true, false);
-  return { article, exemplaires, centre: contenant.localToWorld(new THREE.Vector3(0, 0.1, 0)), contenant };
 }
 
 /** Nombre maximal de couches d'exemplaires dans un contenant. */

@@ -18,6 +18,8 @@ import { ajouterSolOmbres, chargerAmbiance } from './coeur/ambiance.js';
 import { choisirPlace } from './coeur/choixPlace.js';
 import { SessionXR } from './coeur/sessionXR.js';
 import { ARTICLES } from './marche/articles.js';
+import { RAYONS, articlesDuRayon } from './marche/rayons.js';
+import { afficherChoixRayon, rayonChoisi } from './interface/choixRayon.js';
 import { BibliothequeModeles } from './marche/modeles3D.js';
 import { creerMatiere, prechargerMatieres } from './marche/matieres.js';
 import { construireEtal } from './marche/etal.js';
@@ -97,13 +99,19 @@ async function chargerPlace(tentativesRestantes = 3) {
 }
 chargerPlace();
 
-// Tous les modèles 3D nécessaires : articles, contenants et décor.
+// Choix de l'étal sur l'accueil. Un seul rayon est prêt pour l'instant (les
+// fruits) : l'étal est construit avec le rayon coché au chargement.
+const listeRayons = document.getElementById('liste-rayons');
+afficherChoixRayon(listeRayons, RAYONS);
+const articlesEtal = articlesDuRayon(ARTICLES, rayonChoisi(listeRayons));
+
+// Tous les modèles 3D nécessaires : articles de l'étal, contenants et décor.
 // Les textures du bois et de la toile sont préchargées en même temps, pour
 // que l'étal apparaisse d'un coup, déjà texturé.
 const bibliotheque = new BibliothequeModeles(CONFIG.dossierModeles);
 await Promise.all([
   bibliotheque.charger([...new Set([
-    ...ARTICLES.map((article) => article.modele),
+    ...articlesEtal.map((article) => article.modele),
     CONFIG.panier.modele,
     CONFIG.corbeille.modele,
     ...CONFIG.etagere.map((element) => element.modele),
@@ -116,7 +124,7 @@ await Promise.all([
   }),
 ]);
 
-const etal = construireEtal(CONFIG, bibliotheque);
+const etal = construireEtal(CONFIG, bibliotheque, articlesEtal);
 scene.add(etal.objet3D);
 // Positions à jour avant de sortir les articles de leurs cagettes.
 scene.updateMatrixWorld();
@@ -152,7 +160,7 @@ let tempsCourant = 0;
  */
 function tirerPartie() {
   const { tailleMinimale, tailleMaximale, quantiteMaximale } = CONFIG.liste;
-  const articles = tirerListe(ARTICLES,
+  const articles = tirerListe(articlesEtal,
     tailleMinimale + Math.floor(Math.random() * (tailleMaximale - tailleMinimale + 1)));
   return new Partie(tirerQuantites(
     articles,

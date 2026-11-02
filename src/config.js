@@ -208,12 +208,14 @@ export const CONFIG = Object.freeze({
     hauteurAccroche: 1.93,
   }),
 
-  /** Paniers ronds en osier aux extrémités du rang avant (pains). */
+  /**
+   * Paniers ronds en osier aux extrémités du rang avant : simple décor (vides),
+   * car leurs bords hauts cachaient ce qu'on y mettait.
+   */
   corbeille: Object.freeze({
     modele: 'wicker_basket_02',
     /** Seulement le panier (le modèle contient aussi son couvercle, posé à côté). */
     element: 'wicker_basket_02_base',
-    articles: Object.freeze(['croissant', 'petit-pain']),
   }),
 
   /**

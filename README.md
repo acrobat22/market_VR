@@ -19,7 +19,7 @@ Le contexte complet, les décisions et l'état d'avancement sont dans
 | 1 | Socle (projet, modules communs, tirage de la liste) | ✅ |
 | 2 | Décor : place tirée au hasard parmi 5, étal garni d'objets photographiés | ✅ à valider |
 | 3 | Jeu : ardoise, saisie, panier, quantités, réussite et « Rejouer » | ✅ à valider |
-| 4 | Un étal par thème (fruits, légumes, poissons, pains et viennoiseries), choisi sur l'accueil | à faire (modèles 3D à trouver) |
+| 4 | Un étal par thème (fruits, légumes, poissons, pains et viennoiseries), choisi sur l'accueil | en cours : choix et étal de fruits faits ; autres étals « bientôt » (modèles 3D CC0 à trouver) |
 
 ## Structure
 
@@ -42,8 +42,9 @@ src/
   coeur/sessionXR.js       Démarrage et fin de la session WebXR
   coeur/qualiteAdaptative.js       Logique pure : baisse la qualité si l'affichage ralentit
   entrees/                 Mains, détecteur de pincement, souris (repris de « construction »)
-  interface/               Sons, bouton 3D, icônes, mode sans casque (repris)
-  marche/articles.js       Les 12 articles vendus et leurs modèles 3D
+  interface/               Sons, bouton 3D, icônes, mode sans casque (repris), choix de l'étal
+  marche/articles.js       Les articles vendus (rayon, noms, modèle 3D)
+  marche/rayons.js         Les rayons (un étal par type de produit) et leurs articles
   marche/modeles3D.js      Chargement des modèles (tentatives, éléments séparables)
   marche/matieres.js       Bois et toile réalistes, préchargés
   marche/ardoise.js        Ardoise de la liste écrite à la craie, cadre en bois (cases cochées et barrées)
