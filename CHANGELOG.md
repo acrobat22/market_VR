@@ -8,6 +8,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 ## [Non publié]
 
 ### Modifié
+- 2026-11-02 — Cagettes garnies en **vrai tas** plutôt qu'en grille : chaque
+  exemplaire, tourné au hasard (les allongés à peu près dans la longueur, un
+  peu croisés), est lâché à un endroit tiré au hasard et se pose sur ce qui
+  est déjà là (carte des hauteurs, `marche/tas.js`) ; la cagette est pleine
+  quand le tas atteindrait le haut des bords. Mesures précises des objets
+  inclinés (les boîtes englobantes les gonflaient jusqu'à 40 %). 6 tests de plus.
 - 2026-11-02 — Cagettes pleines : chaque cagette contient autant d'exemplaires
   qu'elle peut en loger sur 2 couches, 20 au plus (pour ménager le casque).
 

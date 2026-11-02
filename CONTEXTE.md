@@ -162,8 +162,15 @@ les briques techniques et les règles d'accessibilité.
 - Comptoir : bord avant à 0,38 m du joueur, 2,10 m de large, 0,62 m de profondeur,
   0,74 m de haut (hauteur de table : joueur assis).
 - Cagettes : 30 × 24 × 10 cm (2026-11-02 ; avant 25 × 21 × 8,5, effet « maquette »).
-- Quantités exposées = capacité de la cagette (2 couches), plafonnée à 20
-  exemplaires (objets à dessiner : ménager le casque). Goyave retirée (scan
+- Quantités exposées : plafond par article (20 au plus : objets à dessiner,
+  ménager le casque) ; la cagette s'arrête d'elle-même quand elle est pleine.
+- **Tas en vrac** (2026-11-02, remplace la grille jugée « trop ordonnée ») :
+  `marche/tas.js` = carte des hauteurs (cases de 5 mm), articles assimilés à
+  des ovoïdes, 24 emplacements essayés, le plus bas gardé, préférence pour le
+  centre décroissante avec la taille. Plein quand le dessous dépasserait 60 %
+  des bords (gros articles : 80 % de leur hauteur) ; 5 échecs de suite = plein.
+  Allongés orientés dans la longueur ±35° (±17° si plus longs que la moitié).
+  Mesures `Box3.setFromObject(objet, true)` (précises) pour les objets inclinés. Goyave retirée (scan
   coupé en deux) : 24 fruits.
 - Articles mis à leur **taille réelle** : champ `taille` (plus grande dimension,
   en m) ; l'échelle est calculée au chargement (`calculerEchelle`, moyenne des

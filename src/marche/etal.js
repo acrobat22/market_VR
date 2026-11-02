@@ -12,6 +12,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 import { calculerEchelle } from './articles.js';
 import { creerMatiere } from './matieres.js';
+import { Tas } from './tas.js';
 
 /**
  * @typedef {object} EmplacementArticle
@@ -206,7 +207,8 @@ function repartirLargeurs(largeurs, ecart) {
 function poserSur(objet, point) {
   objet.position.set(0, 0, 0);
   objet.updateMatrixWorld(true);
-  const boite = new THREE.Box3().setFromObject(objet);
+  // Mesure précise (sommets) : un objet incliné reposerait sinon au-dessus du sol.
+  const boite = new THREE.Box3().setFromObject(objet, true);
   const centre = boite.getCenter(new THREE.Vector3());
   objet.position.set(point.x - centre.x, point.y - boite.min.y, point.z - centre.z);
 }
@@ -510,7 +512,7 @@ function garnirCagette(groupe, config, bibliotheque, article, centre, pose, bois
   cagette.name = `cagette-${article.id}`;
   contenant.add(cagette);
 
-  const interieur = { largeur: largeur - 2 * e, profondeur: profondeur - 2 * e };
+  const interieur = { largeur: largeur - 2 * e, profondeur: profondeur - 2 * e, hauteur };
   const exemplaires = remplir(contenant, bibliotheque, article, interieur, e);
   contenant.updateWorldMatrix(true, false);
   return { article, exemplaires, centre: contenant.localToWorld(new THREE.Vector3(0, hauteur / 2, 0)), contenant };
@@ -542,84 +544,94 @@ function echelleArticle(bibliotheque, article) {
   return echellesArticles.get(article.id);
 }
 
-/** Nombre maximal de couches d'exemplaires dans un contenant. */
-const COUCHES_MAXIMALES = 2;
-
-/** Écart relatif entre exemplaires voisins (moins de 1 = légèrement serrés). */
-const SERRAGE = 0.95;
-
 /** Au-delà de ce rapport longueur / largeur, un article est « allongé ». */
 const RAPPORT_ALLONGE = 1.3;
 
 /**
- * Remplit un contenant d'exemplaires d'un article, en tas bombé : la couche
- * du dessus est plus petite et centrée, avec un léger désordre. Les articles
- * ronds sont tournés au hasard ; les allongés sont alignés dans le sens qui
- * rentre le mieux.
+ * Un contenant est plein quand le dessous d'un nouvel exemplaire dépasserait
+ * cette fraction de la hauteur de ses bords : le tas reste bombé sans déborder.
+ * Un gros article (chou, courge) peut toutefois s'appuyer sur un autre jusqu'à
+ * cette fraction de sa propre hauteur.
+ */
+const REMPLISSAGE_MAXIMAL = 0.6;
+const APPUI_GROS_ARTICLES = 0.8;
+
+/** Inclinaison au hasard (de part et d'autre), en radians : ronds et allongés. */
+const INCLINAISON_RONDS = 0.35;
+const INCLINAISON_ALLONGES = 0.12;
+
+/**
+ * Désordre de l'orientation des articles allongés autour de la longueur du
+ * contenant (de part et d'autre), en radians : environ 35°, ils se croisent un
+ * peu. Réduit à 17° pour les très longs (plus de la moitié du contenant), sans
+ * quoi un second n'aurait plus la place de se loger à côté du premier.
+ */
+const DESORDRE_ALLONGES = 0.6;
+const DESORDRE_TRES_LONGS = 0.3;
+
+/** Après ce nombre d'essais ratés de suite (posés trop haut), le contenant est plein. */
+const ECHECS_CONTENANT_PLEIN = 5;
+
+/**
+ * Remplit un contenant d'exemplaires d'un article, en vrai tas : chaque
+ * exemplaire, tourné au hasard (les allongés à peu près dans la longueur,
+ * parfois croisés), est lâché à un endroit tiré au hasard et se pose sur ce
+ * qui est déjà là (voir `tas.js`), jusqu'à ce que le contenant soit plein
+ * ou que la quantité de l'article soit atteinte.
  *
  * @param {THREE.Group} contenant - Groupe local du contenant (origine au centre du fond).
  * @param {import('./modeles3D.js').BibliothequeModeles} bibliotheque - Modèles 3D.
  * @param {import('./articles.js').Article} article - Article à exposer.
- * @param {{ largeur: number, profondeur: number }} interieur - Dimensions utiles du contenant.
+ * @param {{ largeur: number, profondeur: number, hauteur: number }} interieur - Dimensions utiles
+ *   du contenant (hauteur : celle de ses bords).
  * @param {number} hauteurFond - Hauteur du dessus du fond, dans le repère du contenant.
  * @returns {THREE.Object3D[]}
  */
 function remplir(contenant, bibliotheque, article, interieur, hauteurFond) {
   const elements = article.elements ?? [undefined];
-  const reference = bibliotheque.creer(article.modele, elements[0]);
-  if (!reference) {
-    return [];
-  }
   const echelle = echelleArticle(bibliotheque, article);
-  const taille = new THREE.Box3().setFromObject(reference).getSize(new THREE.Vector3()).multiplyScalar(echelle);
-  const estAllonge = Math.max(taille.x, taille.z) / Math.min(taille.x, taille.z) > RAPPORT_ALLONGE;
-
-  // Pour un article allongé, on garde l'orientation (0 ou 90°) qui en loge le plus.
-  const grille = (largeurX, largeurZ) => ({
-    colonnes: Math.max(1, Math.floor(interieur.largeur / (largeurX * SERRAGE))),
-    rangees: Math.max(1, Math.floor(interieur.profondeur / (largeurZ * SERRAGE))),
-  });
-  const droite = grille(taille.x, taille.z);
-  const tournee = grille(taille.z, taille.x);
-  const tourner = estAllonge && tournee.colonnes * tournee.rangees > droite.colonnes * droite.rangees;
-  const base = tourner ? tournee : droite;
-  const pas = {
-    x: interieur.largeur / base.colonnes,
-    z: interieur.profondeur / base.rangees,
-  };
-
-  // Places de chaque couche : la couche supérieure a une colonne et une rangée
-  // de moins, décalée d'une demi-case (comme un vrai tas de fruits).
-  const places = [];
-  for (let couche = 0; couche < COUCHES_MAXIMALES; couche++) {
-    const colonnes = Math.max(1, base.colonnes - couche);
-    const rangees = Math.max(1, base.rangees - couche);
-    for (let rangee = 0; rangee < rangees; rangee++) {
-      for (let colonne = 0; colonne < colonnes; colonne++) {
-        places.push({
-          x: (colonne - (colonnes - 1) / 2) * pas.x,
-          z: (rangee - (rangees - 1) / 2) * pas.z,
-          y: hauteurFond + couche * taille.y * 0.72,
-        });
-      }
-    }
-  }
+  const tas = new Tas({ largeur: interieur.largeur, profondeur: interieur.profondeur, hauteurFond });
+  const taille = new THREE.Vector3();
 
   const exemplaires = [];
-  const quantite = Math.min(article.quantite, places.length);
-  for (let indice = 0; indice < quantite; indice++) {
-    const place = places[indice];
-    const objet = bibliotheque.creer(article.modele, elements[indice % elements.length]);
+  let echecs = 0;
+  while (exemplaires.length < article.quantite && echecs < ECHECS_CONTENANT_PLEIN) {
+    const objet = bibliotheque.creer(article.modele, elements[exemplaires.length % elements.length]);
+    if (!objet) {
+      break;
+    }
     objet.scale.setScalar(echelle);
+
+    // Dimensions de l'exemplaire incliné, avant de le tourner autour de la verticale.
+    new THREE.Box3().setFromObject(objet).getSize(taille);
+    const estAllonge = Math.max(taille.x, taille.z) / Math.min(taille.x, taille.z) > RAPPORT_ALLONGE;
+    const inclinaison = estAllonge ? INCLINAISON_ALLONGES : INCLINAISON_RONDS;
+    // Ordre « YXZ » : l'inclinaison est propre à l'exemplaire, le lacet vient ensuite.
+    objet.rotation.set((Math.random() - 0.5) * 2 * inclinaison, 0, (Math.random() - 0.5) * 2 * inclinaison, 'YXZ');
+    objet.updateMatrixWorld(true);
+    // Mesure précise (sommets) : la boîte d'un objet incliné serait sinon gonflée.
+    new THREE.Box3().setFromObject(objet, true).getSize(taille);
+
+    // Ronds : n'importe quel sens. Allongés : à peu près dans la longueur du contenant.
+    const desordre = Math.max(taille.x, taille.z) > interieur.largeur / 2 ? DESORDRE_TRES_LONGS : DESORDRE_ALLONGES;
     const lacet = estAllonge
-      ? (tourner ? Math.PI / 2 : 0) + (Math.random() < 0.5 ? 0 : Math.PI) + (Math.random() - 0.5) * 0.35
+      ? (taille.x >= taille.z ? 0 : Math.PI / 2) + (Math.random() < 0.5 ? 0 : Math.PI)
+        + (Math.random() - 0.5) * 2 * desordre
       : Math.random() * Math.PI * 2;
-    objet.rotation.set((Math.random() - 0.5) * 0.3, lacet, (Math.random() - 0.5) * 0.3);
-    poserSur(objet, new THREE.Vector3(
-      place.x + (Math.random() - 0.5) * pas.x * 0.18,
-      place.y,
-      place.z + (Math.random() - 0.5) * pas.z * 0.18,
-    ));
+    const place = tas.deposer({
+      demiLongueur: taille.x / 2,
+      demiLargeur: taille.z / 2,
+      demiHauteur: taille.y / 2,
+      lacet,
+    }, Math.random, hauteurFond + Math.max(interieur.hauteur * REMPLISSAGE_MAXIMAL, taille.y * APPUI_GROS_ARTICLES));
+    if (!place) {
+      // Pas de place assez basse : on réessaie avec une autre orientation.
+      echecs += 1;
+      continue;
+    }
+    echecs = 0;
+    objet.rotation.y = lacet;
+    poserSur(objet, new THREE.Vector3(place.x, place.bas, place.z));
     objet.name = `article-${article.id}`;
     objet.userData.article = article.id;
     contenant.add(objet);

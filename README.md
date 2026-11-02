@@ -45,6 +45,7 @@ src/
   entrees/                 Mains, détecteur de pincement, souris (repris de « construction »)
   interface/               Sons, bouton 3D, icônes, mode sans casque (repris), choix de l'étal
   marche/articles.js       Les articles vendus (rayon, noms, modèle 3D)
+  marche/tas.js            Logique pure : tas d'articles en vrac dans une cagette (carte des hauteurs)
   marche/rayons.js         Les rayons (un étal par type de produit) et leurs articles
   marche/modeles3D.js      Chargement des modèles (tentatives, éléments séparables)
   marche/matieres.js       Bois et toile réalistes, préchargés
