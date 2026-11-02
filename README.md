@@ -19,7 +19,7 @@ Le contexte complet, les décisions et l'état d'avancement sont dans
 | 1 | Socle (projet, modules communs, tirage de la liste) | ✅ |
 | 2 | Décor : place tirée au hasard parmi 5, étal garni d'objets photographiés | ✅ à valider |
 | 3 | Jeu : ardoise, saisie, panier, quantités, réussite et « Rejouer » | ✅ à valider |
-| 4 | Un étal par thème (fruits, légumes, poissons, pains et viennoiseries), choisi sur l'accueil | en cours : fruits (25, dont 10 au hasard par partie) et légumes (10) faits ; poissons et pains « Bientôt » (modèles CC0 à trouver) |
+| 4 | Un étal par thème (fruits, légumes), choisi sur l'accueil | ✅ fruits (25) et légumes (11), 10 au hasard par partie |
 
 ## Structure
 

@@ -182,13 +182,6 @@ export const ARTICLES = Object.freeze([
     quantite: 6,
     elements: ['A33_Turnip', 'A94_Turnip'],
   },
-  { id: 'croissant', rayon: 'boulangerie', singulier: 'croissant', pluriel: 'croissants', modele: 'croissant', quantite: 4 },
-  {
-    id: 'petit-pain',
-    rayon: 'boulangerie',
-    singulier: 'petit pain', pluriel: 'petits pains',
-    modele: 'hamburger_buns',
-    quantite: 4,
-    elements: ['hamburger_buns_01', 'hamburger_buns_02', 'hamburger_buns_03'],
-  },
+  // Oignon : modèle Poly Haven (CC0).
+  { id: 'oignon', rayon: 'legumes', singulier: 'oignon', pluriel: 'oignons', modele: 'yellow_onion', quantite: 12 },
 ].map(Object.freeze));

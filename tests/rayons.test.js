@@ -1,6 +1,6 @@
 /**
  * @file Tests des rayons : chaque article a un rayon connu, chaque étal
- * disponible peut être garni et fournir une liste complète.
+ * peut fournir une liste complète.
  */
 
 import { test } from 'node:test';
@@ -17,12 +17,8 @@ test('chaque article appartient à un rayon connu', () => {
   }
 });
 
-test('au moins un rayon est disponible', () => {
-  assert.ok(RAYONS.some((rayon) => rayon.disponible));
-});
-
-test('un étal disponible a assez d’articles pour la plus longue liste', () => {
-  for (const rayon of RAYONS.filter((rayonMarche) => rayonMarche.disponible)) {
+test('chaque étal a assez d’articles pour la plus longue liste', () => {
+  for (const rayon of RAYONS) {
     const nombre = articlesDuRayon(ARTICLES, rayon.id).length;
     assert.ok(nombre >= CONFIG.liste.tailleMaximale, `${rayon.id} : ${nombre} articles`);
   }
@@ -30,12 +26,12 @@ test('un étal disponible a assez d’articles pour la plus longue liste', () =>
 
 test('l’étal de légumes ne vend que des légumes', () => {
   const ids = articlesDuRayon(ARTICLES, 'legumes').map((article) => article.id);
-  assert.ok(ids.includes('carotte') && ids.includes('pomme-de-terre'));
-  assert.ok(!ids.includes('pomme') && !ids.includes('croissant'));
+  assert.ok(ids.includes('carotte') && ids.includes('oignon'));
+  assert.ok(!ids.includes('pomme'));
 });
 
 test('l’étal de fruits ne vend que des fruits', () => {
   const ids = articlesDuRayon(ARTICLES, 'fruits').map((article) => article.id);
   assert.ok(ids.includes('pomme'));
-  assert.ok(!ids.includes('croissant') && !ids.includes('oignon'));
+  assert.ok(!ids.includes('carotte') && !ids.includes('oignon'));
 });

@@ -8,6 +8,13 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 ## [Non publié]
 
 ### Ajouté
+- 2026-11-02 — Oignon (Poly Haven) sur l'étal de légumes : 11 légumes, l'étal
+  en montre 10 au hasard à chaque partie.
+
+### Supprimé
+- Rayons « Poissons » et « Pains et viennoiseries » (aucun modèle 3D CC0),
+  avec la mention « Bientôt » de l'accueil ; croissants et petits pains
+  retirés ; modèles inutilisés supprimés (croissant, petits pains, patate douce).
 - 2026-11-02 — Étal de légumes : carotte, pomme de terre, chou, brocoli,
   concombre, aubergine, champignon, ail, courge butternut, navet (pack KIRI
   Engine « Fruit and Veg », CC0), avec plusieurs variantes par légume.

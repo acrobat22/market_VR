@@ -22,6 +22,7 @@ les briques techniques et les règles d'accessibilité.
 | Technologie | WebXR + Three.js 0.186.1, **sans compilation** (modules ES, *import map*, `vendor/`) |
 | Entrée | **Suivi des mains**, un seul geste : le **pincement** ; **mode sans casque** à la souris pour tester |
 | Graphisme | **Réaliste et très détaillé** : objets **photographiés** (photogrammétrie Poly Haven, CC0), à l'échelle réelle |
+| Étals | **Fruits** (25, 10 au hasard) et **légumes** (11, 10 au hasard), choisis sur l'accueil — 2026-11-02 |
 | Décor | **5 places 360°** (Poly Haven, CC0) : Dresde « dresden_square », Ulm « ulmer_muenster », Venise « venetian_crossroads », Fürstenstein « furstenstein », Rome « piazza_martin_lutero ». **Tirée au hasard à chaque chargement, jamais deux fois de suite** (dernière place retenue par `localStorage`) ; `?place=<nom>` en impose une pour les réglages — décidé le 2026-10-29 |
 | Étal | Construit par le code (comptoir, poteaux, auvent rayé rouge et crème, étagère) avec bois et toile CC0, garni des modèles photographiés |
 | Rangement des denrées | **Pas linéaire** : rangs en léger arc tourné vers le joueur, petits écarts d'angle et de position, cagettes du fond **inclinées** et **rehaussées** à des hauteurs variées, fruits en **tas bombés**, quelques fruits « échappés » sur le comptoir |
@@ -128,12 +129,16 @@ les briques techniques et les règles d'accessibilité.
   (tailles incohérentes) : orange A24/A60, pêche A12, melon A137. Échelles
   corrigées : ail 1,5, champignon 1,7, aubergine 0,75, brocoli 0,8, butternut
   0,75, mangue 0,8, pomme cannelle 2.
-- Oignon et patate douce (Poly Haven) retirés des articles (réserve : modèles
-  toujours dans `ressources/modeles/`). Ni pain ni poisson dans le pack KIRI.
-- Reste à faire : décor propre à chaque étal (glace pilée et toile bleue pour
-  le poisson, plateaux bas pour les pains), gros fruits en décor au sol
-  (pastèque), étals poissons et pains (modèles CC0 à trouver ; piste : scans
-  faits soi-même avec l'application KIRI Engine).
+- 2026-11-02 : **oignon** (Poly Haven) rajouté aux légumes (11 → 10 au hasard
+  par partie). **Rayons poissons et pains supprimés** à la demande de
+  l'utilisatrice (aucun modèle CC0) ; croissants, petits pains et patate douce
+  retirés, ainsi que leurs modèles. Le mécanisme « Bientôt » a été retiré.
+- Pistes : gros fruits en décor au sol (pastèque) ; un jour, poissons ou pains
+  scannés soi-même avec l'application KIRI Engine (scans CC0).
+- **Fragilité** : une texture glTF isolée en échec n'est pas retentée (seul le
+  modèle entier l'est) → objet blanc. Vu avec Chrome sans affichage ; possible
+  sur le Quest en Wi-Fi faible. Amélioration possible : vérifier les textures
+  après chargement et retenter le modèle.
 - Modèles **CC0 uniquement** (poissons compris). État des recherches :
   fruits OK (Poly Haven, + litchi `food_lychee_01`) ; légumes : Poly Haven n'a
   que patate douce, oignon, gingembre → pack **KIRI Engine « Fruit and Veg »**

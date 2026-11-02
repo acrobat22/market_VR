@@ -3,22 +3,18 @@
  *
  * Le joueur choisit son étal sur la page d'accueil ; l'étal n'expose que les
  * articles de son rayon, et la liste de courses est tirée parmi eux.
- * Un rayon reste « bientôt disponible » tant que ses modèles 3D (CC0) manquent.
  */
 
 /**
  * @typedef {object} Rayon
  * @property {string} id - Identifiant (repris par le champ `rayon` des articles).
  * @property {string} nom - Nom affiché sur la page d'accueil.
- * @property {boolean} disponible - `false` tant que l'étal n'est pas prêt.
  */
 
 /** @type {readonly Rayon[]} */
 export const RAYONS = Object.freeze([
-  { id: 'fruits', nom: 'Fruits', disponible: true },
-  { id: 'legumes', nom: 'Légumes', disponible: true },
-  { id: 'poissons', nom: 'Poissons', disponible: false },
-  { id: 'boulangerie', nom: 'Pains et viennoiseries', disponible: false },
+  { id: 'fruits', nom: 'Fruits' },
+  { id: 'legumes', nom: 'Légumes' },
 ].map(Object.freeze));
 
 /**
