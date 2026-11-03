@@ -9,9 +9,6 @@ sans installation.
   on remplit son panier, puis on peut rejouer.
 - Aucun chrono, aucune erreur possible ; texte en grand, sons doux.
 
-Le contexte complet, les décisions et l'état d'avancement sont dans
-[CONTEXTE.md](CONTEXTE.md).
-
 ## État d'avancement
 
 | Étape | Contenu | État |
@@ -31,7 +28,10 @@ vendor/three/              Three.js 0.186.1 (copie locale, licence MIT)
 vendor/webxr-input-profiles/  Modèles 3D des mains (licence MIT)
 ressources/modeles/        Modèles 3D photographiés, glTF 1k (Poly Haven et KIRI Engine, CC0)
 outils/convertir_kiri.py   Conversion FBX → glTF des modèles du pack KIRI (script Blender)
+outils/assetlinks.modele.json  Modèle du fichier de vérification Meta (voir « Empaqueter pour le Quest »)
 ressources/textures/       Bois « rough_wood », toile « rough_linen » (Poly Haven, CC0)
+ressources/icones/        Icône du jeu (rendu 3D du panier) : 192, 512 et 512 « maskable »
+manifest.webmanifest       Manifeste de l'application web (nom, icônes, couleurs)
 ressources/polices/       Police manuscrite « Patrick Hand » de l'ardoise (licence OFL)
 ressources/environnements/ 5 places 360° : Dresde, Ulm, Venise, Fürstenstein, Rome (Poly Haven, CC0)
 src/
@@ -76,6 +76,43 @@ Une place différente est affichée à chaque chargement. Pour en imposer une
 `?place=` à l'adresse : `dresde`, `ulm`, `venise`, `furstenstein` ou `rome`,
 par exemple <http://localhost:8000/?place=venise>.
 
+## Tester sur le Quest avec GitHub Pages
+
+Une fois GitHub Pages activé (Réglages du dépôt → Pages → branche `main`,
+dossier racine), le jeu est servi en HTTPS à l'adresse
+<https://acrobat22.github.io/market_VR/>. Il suffit de l'ouvrir dans le
+navigateur du Quest : **aucun fichier de vérification n'est nécessaire** pour
+jouer depuis le navigateur.
+
+## Empaqueter pour le Quest (application installable)
+
+Le fichier de vérification `assetlinks.json` n'est utile que pour une
+application empaquetée avec Bubblewrap (Store, ou installation par `adb`) :
+Meta indique qu'une application **immersive** (WebXR) ne se lance pas si cette
+vérification échoue ([documentation Meta](https://developers.meta.com/vr/documentation/web/pwa-packaging/)).
+
+1. Installer l'outil de Meta (Node.js 18 ou plus) :
+   `npm install --global @meta-quest/bubblewrap-cli`
+2. Dans un dossier à part (hors de ce dépôt) :
+   `bubblewrap init --manifest=https://acrobat22.github.io/market_VR/manifest.webmanifest --metaquest`
+   (choisir le mode « immersive » et un identifiant de paquet, par exemple
+   `io.github.acrobat22.marche`, qui ne devra plus changer), puis `bubblewrap build`.
+3. Relever l'empreinte SHA-256 de la clé :
+   `keytool -list -v -keystore android.keystore -alias android`, puis
+   `bubblewrap fingerprint add <empreinte>`, qui génère `assetlinks.json`
+   (même structure que `outils/assetlinks.modele.json`).
+4. Publier ce fichier **à la racine du domaine** :
+   `https://acrobat22.github.io/.well-known/assetlinks.json`. Avec GitHub
+   Pages, le dossier du projet (`/market_VR/`) ne convient pas : il faut un
+   dépôt `acrobat22.github.io` (site personnel) contenant
+   `.well-known/assetlinks.json` et un fichier vide `.nojekyll` (sans lui,
+   GitHub Pages ignore les dossiers qui commencent par un point), ou un nom de
+   domaine personnel.
+5. Installer sur le casque (mode développeur) :
+   `adb install app-release-signed.apk`, puis ouvrir l'application depuis
+   « Sources inconnues ». En cas d'échec, chercher
+   `TWA verification was unsuccessful` dans le journal du casque.
+
 ## Ajouter un modèle du pack KIRI
 
 Placer le pack téléchargé à la racine (`KIRI_Asset_Pack_Fruit_and_Veg/`, ignoré par git), puis :
@@ -97,6 +134,7 @@ node --test
 
 - Code : [MIT](LICENSE).
 - Three.js et modèles des mains : MIT (voir `vendor/`).
+- Icône : rendu du jeu (panier et articles ci-dessus, Poly Haven et KIRI Engine, CC0).
 - Police « Patrick Hand » (Patrick Wagesreiter) : [SIL Open Font License 1.1](ressources/polices/OFL.txt).
 - Fruits et légumes « kiri_* » : pack [KIRI Engine « Fruit and Veg »](https://www.kiriengine.app/blender-addon/fruit-and-veg-asset-pack-by-kiri-engine), CC0.
   Le pack lui-même n'est pas dans le dépôt (KIRI demande de ne pas le redistribuer tel quel) : seuls les modèles convertis y sont.

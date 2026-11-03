@@ -1,7 +1,7 @@
 # Fichiers système macOS
 .DS_Store
 
-# Journaux de débogage (voir CONTEXTE.md)
+# Journaux de débogage
 debug.log
 erreurs.log
 
@@ -14,3 +14,8 @@ imagesExemples/
 # Pack KIRI Engine « Fruit and Veg » (CC0, mais à ne pas redistribuer tel quel :
 # seuls les modèles convertis vont dans ressources/modeles/)
 KIRI_Asset_Pack_Fruit_and_Veg/
+
+# Notes de travail personnelles (gardées en local, hors du dépôt public)
+CLAUDE.md
+CONTEXTE.md
+CHANGELOG.md
