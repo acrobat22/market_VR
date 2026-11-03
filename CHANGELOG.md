@@ -7,6 +7,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Non publié]
 
+### Ajouté
+- 2026-11-03 — Manifeste web (`manifest.webmanifest` : nom, icônes, couleurs,
+  chemins relatifs pour GitHub Pages), icône du jeu (rendu 3D du panier garni :
+  192, 512 et 512 « maskable »), favicon ; modèle du fichier de vérification
+  Meta (`outils/assetlinks.modele.json`) et procédure d'empaquetage dans le README.
+
 ### Modifié
 - 2026-11-02 — Cagettes garnies en **vrai tas** plutôt qu'en grille : chaque
   exemplaire, tourné au hasard (les allongés à peu près dans la longueur, un
