@@ -4,7 +4,8 @@ Jeu de **courses au marché** en réalité virtuelle, pensé pour les
 **personnes âgées**, qui fonctionne dans le navigateur du **Meta Quest 3**,
 sans installation.
 
-- On joue **assis** devant un étal, avec un seul geste : le **pincement**.
+- On joue **assis** au milieu d'un étal en arc, où tout est à portée de main,
+  avec un seul geste : le **pincement**.
 - Une **liste de courses** est tirée au hasard (« 2 pommes », « 1 citron ») ;
   on remplit son panier, puis on peut rejouer.
 - Aucun chrono, aucune erreur possible ; texte en grand, sons doux.
@@ -16,7 +17,7 @@ sans installation.
 | 1 | Socle (projet, modules communs, tirage de la liste) | ✅ |
 | 2 | Décor : place tirée au hasard parmi 5, étal garni d'objets photographiés | ✅ à valider |
 | 3 | Jeu : ardoise, saisie, panier, quantités, réussite et « Rejouer » | ✅ à valider |
-| 4 | Un étal par thème (fruits, légumes), choisi sur l'accueil | ✅ fruits (25) et légumes (11), 10 au hasard par partie |
+| 4 | Un étal par thème (fruits, légumes), choisi sur l'accueil | ✅ fruits (24) et légumes (11), 8 au hasard par partie |
 
 ## Structure
 
@@ -50,7 +51,8 @@ src/
   marche/modeles3D.js      Chargement des modèles (tentatives, éléments séparables)
   marche/matieres.js       Bois et toile réalistes, préchargés
   marche/ardoise.js        Ardoise de la liste écrite à la craie, cadre en bois (cases cochées et barrées)
-  marche/etal.js           L'étal : structure (comptoir, auvent, panier, décor) et garniture (cagettes, articles)
+  marche/disposition.js    Logique pure : étal en arc autour du joueur (panier, rang avant, gradin)
+  marche/etal.js           L'étal : structure (comptoir en arc, auvent, panier, décor) et garniture (cagettes, articles)
   marche/ombreContact.js   Ombre douce au pied des objets
   jeu/listeCourses.js      Logique pure : tirage de la liste et des quantités au hasard
   jeu/saisie.js            Saisie et déplacement des objets par pincement (repris de « construction »)

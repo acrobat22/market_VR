@@ -2,8 +2,9 @@
  * @file Étal de marché : comptoir en bois, poteaux, auvent rayé, étagère,
  * cagettes garnies des articles du rayon, panier du joueur, décor.
  *
- * Le joueur est assis à l'origine, face à l'étal (vers -z). Le rang avant
- * est à portée de main ; le rang arrière, surélevé, demande de se pencher
+ * Le joueur est assis à l'origine, face à l'étal (vers -z). Le comptoir fait
+ * un arc autour de lui (voir `disposition.js`) : le panier et le rang avant
+ * sont à portée de main ; le gradin, surélevé, demande au plus de se pencher
  * un peu.
  */
 
@@ -12,6 +13,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 import { calculerEchelle } from './articles.js';
 import { creerMatiere } from './matieres.js';
+import { disposerEtal } from './disposition.js';
 import { Tas, profilDeTriangles } from './tas.js';
 
 /**
@@ -34,8 +36,8 @@ import { Tas, profilDeTriangles } from './tas.js';
  * @property {THREE.Object3D | null} panier - Panier du joueur.
  * @property {THREE.Vector3} centrePanier - Centre du fond du panier (repère de la scène).
  * @property {(articles: readonly import('./articles.js').Article[]) => Garniture} garnir
- *   Crée les cagettes garnies des articles donnés (10 au plus : jusqu'à 6 au
- *   rang arrière, 4 au rang avant). Peut être rappelée pour changer d'articles.
+ *   Crée les cagettes garnies des articles donnés (8 au plus : jusqu'à 6 sur
+ *   le gradin, 2 au rang avant). Peut être rappelée pour changer d'articles.
  */
 
 /**
@@ -52,43 +54,33 @@ export function construireEtal(config, bibliotheque) {
   const groupe = new THREE.Group();
   groupe.name = 'etal';
 
-  const avant = -reglages.distanceComptoir;
-  const arriere = avant - reglages.profondeur;
+  const avant = reglages.avantStructure;
+  const arriere = reglages.arriereStructure;
   const bois = (repX, repY, teinte) => creerMatiere({
     dossier: reglages.dossierTextures, nom: reglages.textureBois, repetitionX: repX, repetitionY: repY, teinte,
   });
 
-  groupe.add(creerComptoir(reglages, avant, arriere, bois));
+  groupe.add(creerComptoir(reglages, bois));
   groupe.add(creerStructure(reglages, avant, arriere, bois));
   groupe.add(creerAuvent(reglages, avant, arriere));
 
   // Rangs de présentation.
   const dessusComptoir = reglages.hauteur;
   const dessusGradin = reglages.hauteur + reglages.hauteurGradin;
-  const zRangAvant = avant - 0.05 - config.cagette.profondeur / 2;
-  const zRangArriere = arriere + reglages.profondeurGradin / 2;
 
-  // Disposition « vivante » : rangs en léger arc tourné vers le joueur, petits
-  // écarts d'angle et de position, cagettes du fond inclinées et rehaussées.
-  const pose = (centre, extra) => {
-    const lacetVersJoueur = Math.atan2(-centre.x, -centre.z) * reglages.orientationVersJoueur;
-    return { lacet: lacetVersJoueur + (Math.random() - 0.5) * reglages.desordreAngle, ...extra };
-  };
-  const enArc = (x, z) => new THREE.Vector3(
-    x + (Math.random() - 0.5) * reglages.desordrePosition,
-    0,
-    z + reglages.courbureRangs * x * x + (Math.random() - 0.5) * reglages.desordrePosition,
+  // Disposition « vivante » : petits écarts d'angle et de position au hasard,
+  // cagettes du gradin inclinées et rehaussées.
+  const auHasard = (amplitude) => (Math.random() - 0.5) * amplitude;
+  const placer = (pose, hauteur) => new THREE.Vector3(
+    pose.x + auHasard(reglages.desordrePosition),
+    hauteur,
+    pose.z + auHasard(reglages.desordrePosition),
   );
 
-  // Rang avant : 2 cagettes, panier du joueur, 2 cagettes.
-  const largeurPanier = 0.42;
-  const largeurs = [config.cagette.largeur, config.cagette.largeur, largeurPanier,
-    config.cagette.largeur, config.cagette.largeur];
-  const positionsX = repartirLargeurs(largeurs, 0.03);
-
-  // Panier du joueur, au centre du rang avant.
+  // Panier du joueur, droit devant, posé exactement (la zone de dépôt en dépend).
+  const posePanier = disposerEtal(reglages, 0, 0).panier;
   const panier = bibliotheque.creer(config.panier.modele);
-  const centrePanier = new THREE.Vector3(positionsX[2], dessusComptoir, zRangAvant);
+  const centrePanier = new THREE.Vector3(posePanier.x, dessusComptoir, posePanier.z);
   if (panier) {
     panier.position.copy(centrePanier);
     panier.name = 'panier';
@@ -121,48 +113,32 @@ export function construireEtal(config, bibliotheque) {
     garniture.name = 'garniture';
     const emplacements = new Map();
 
-    // Le rang avant (à portée de main) prend la moitié des articles, 4 au plus ;
-    // le reste va au rang arrière, 6 au plus.
-    const nombreAvant = Math.min(4, Math.floor(articles.length / 2));
+    // Le rang avant prend la moitié des articles, 2 au plus ; le reste va sur
+    // le gradin, 6 au plus.
+    const nombreAvant = Math.min(2, Math.floor(articles.length / 2));
     const rangArriere = articles.slice(0, Math.min(6, articles.length - nombreAvant));
     const rangAvant = articles.slice(rangArriere.length, rangArriere.length + nombreAvant);
+    const disposition = disposerEtal(reglages, rangAvant.length, rangArriere.length);
 
-    // Rang arrière : cagettes sur le gradin, inclinées, à des hauteurs variées.
-    repartir(rangArriere.length, config.cagette.largeur, 0.03).forEach((x, indice) => {
-      const centre = enArc(x, zRangArriere).setY(dessusGradin);
-      const extra = {
+    // Gradin : cagettes posées en long (la longueur vers le joueur), inclinées,
+    // à des hauteurs variées.
+    const cagetteEnLong = { ...config.cagette, largeur: config.cagette.profondeur, profondeur: config.cagette.largeur };
+    disposition.rangArriere.forEach((pose, indice) => {
+      const article = rangArriere[indice];
+      emplacements.set(article.id, garnirCagette(garniture, cagetteEnLong, bibliotheque, article, placer(pose, dessusGradin), {
+        lacet: pose.lacet + auHasard(reglages.desordreAngle),
         inclinaison: reglages.inclinaisonRangArriere,
         rehausse: reglages.rehausses[indice % reglages.rehausses.length],
-      };
-      emplacements.set(rangArriere[indice].id,
-        garnirCagette(garniture, config, bibliotheque, rangArriere[indice], centre, pose(centre, extra), bois));
+      }, bois));
     });
 
-    // Rang avant : cagettes de part et d'autre du panier.
-    [0, 1, 3, 4].slice(0, rangAvant.length).forEach((position, indice) => {
+    // Rang avant : cagettes en travers, de part et d'autre du panier.
+    disposition.rangAvant.forEach((pose, indice) => {
       const article = rangAvant[indice];
-      const centre = enArc(positionsX[position], zRangAvant).setY(dessusComptoir);
-      emplacements.set(article.id,
-        garnirCagette(garniture, config, bibliotheque, article, centre, pose(centre, {}), bois));
+      emplacements.set(article.id, garnirCagette(garniture, config.cagette, bibliotheque, article, placer(pose, dessusComptoir), {
+        lacet: pose.lacet + auHasard(reglages.desordreAngle),
+      }, bois));
     });
-
-    // Quelques fruits « échappés », couchés sur le comptoir devant le rang arrière.
-    const zEchappes = arriere + reglages.profondeurGradin + 0.03;
-    for (const id of config.echappes) {
-      const emplacement = emplacements.get(id);
-      // Pas d'échappé devant le panier : on le croirait déjà dans le panier.
-      const devantPanier = emplacement && Math.abs(emplacement.centre.x - centrePanier.x) < largeurPanier / 2 + 0.05;
-      if (emplacement && !devantPanier) {
-        const objet = poserEchappe(garniture, bibliotheque, emplacement.article, new THREE.Vector3(
-          emplacement.centre.x + (Math.random() - 0.5) * 0.1,
-          dessusComptoir,
-          zEchappes + (Math.random() - 0.5) * 0.03,
-        ));
-        if (objet) {
-          emplacement.exemplaires.push(objet);
-        }
-      }
-    }
     return { objet3D: garniture, emplacements };
   };
 
@@ -214,52 +190,85 @@ function poserSur(objet, point) {
 }
 
 /**
- * Comptoir : plateau, gradin du fond, façade en planches verticales.
+ * Secteur d'anneau horizontal (portion de couronne) d'une épaisseur donnée,
+ * centré sur le joueur : plateau ou gradin d'un comptoir en arc.
+ * Les coordonnées de texture sont en mètres (une répétition par mètre).
+ *
+ * @param {number} rayonInterieur - Bord tourné vers le joueur.
+ * @param {number} rayonExterieur - Bord du fond.
+ * @param {number} demiAngle - Demi-angle couvert, depuis l'axe -z.
+ * @param {number} epaisseur - Épaisseur (vers le haut, depuis y = 0).
+ * @returns {THREE.BufferGeometry}
+ */
+function creerSecteur(rayonInterieur, rayonExterieur, demiAngle, epaisseur) {
+  // Dans le plan de la forme, (x, y) devient (x, -z) une fois couché :
+  // l'angle depuis -z vers +x correspond à l'angle π/2 - angle depuis +x.
+  const debut = Math.PI / 2 - demiAngle;
+  const fin = Math.PI / 2 + demiAngle;
+  const forme = new THREE.Shape();
+  forme.moveTo(rayonExterieur * Math.cos(debut), rayonExterieur * Math.sin(debut));
+  forme.absarc(0, 0, rayonExterieur, debut, fin, false);
+  forme.lineTo(rayonInterieur * Math.cos(fin), rayonInterieur * Math.sin(fin));
+  forme.absarc(0, 0, rayonInterieur, fin, debut, true);
+  forme.closePath();
+  return new THREE.ExtrudeGeometry(forme, { depth: epaisseur, bevelEnabled: false, curveSegments: 48 })
+    .rotateX(-Math.PI / 2);
+}
+
+/**
+ * Comptoir en arc autour du joueur : plateau, gradin du fond, ceinture de
+ * planches sous le bord avant (les jambes du joueur passent dessous), pieds.
  *
  * @param {typeof import('../config.js').CONFIG.etal} reglages - Réglages de l'étal.
- * @param {number} avant - Position z du bord avant.
- * @param {number} arriere - Position z du bord arrière.
  * @param {(repX: number, repY: number, teinte?: number) => THREE.Material} bois - Fabrique de matière bois.
  * @returns {THREE.Group}
  */
-function creerComptoir(reglages, avant, arriere, bois) {
+function creerComptoir(reglages, bois) {
   const comptoir = new THREE.Group();
   comptoir.name = 'comptoir';
-  const centreZ = (avant + arriere) / 2;
+  const { rayonInterieur, rayonExterieur, angleComptoir } = reglages;
 
+  // Plateau et gradin : texture répétée tous les 90 cm (coordonnées en mètres).
   const plateau = new THREE.Mesh(
-    new THREE.BoxGeometry(reglages.largeur, reglages.epaisseurPlateau, reglages.profondeur),
-    bois(reglages.largeur / 0.9, reglages.profondeur / 0.9),
+    creerSecteur(rayonInterieur, rayonExterieur, angleComptoir, reglages.epaisseurPlateau),
+    bois(1 / 0.9, 1 / 0.9),
   );
-  plateau.position.set(0, reglages.hauteur - reglages.epaisseurPlateau / 2, centreZ);
+  plateau.position.y = reglages.hauteur - reglages.epaisseurPlateau;
   comptoir.add(plateau);
 
   const gradin = new THREE.Mesh(
-    new THREE.BoxGeometry(reglages.largeur - 0.06, reglages.hauteurGradin, reglages.profondeurGradin),
-    bois(reglages.largeur / 0.9, 0.4, 0xe6d2b8),
+    creerSecteur(reglages.rayonGradin, rayonExterieur - 0.02, reglages.angleGradin, reglages.hauteurGradin),
+    bois(1 / 0.9, 1 / 0.9, 0xe6d2b8),
   );
-  gradin.position.set(0, reglages.hauteur + reglages.hauteurGradin / 2, arriere + reglages.profondeurGradin / 2);
+  gradin.position.y = reglages.hauteur;
   comptoir.add(gradin);
 
-  // Façade : planches verticales légèrement espacées (fusionnées en une géométrie).
+  // Ceinture : planches verticales sous le bord avant, chacune tournée vers le joueur.
   const largeurPlanche = 0.13;
-  const nombre = Math.floor(reglages.largeur / largeurPlanche);
-  const hauteurFacade = reglages.hauteur - reglages.epaisseurPlateau - 0.02;
+  const hauteurCeinture = 0.12;
+  const longueurArc = 2 * angleComptoir * (rayonInterieur + 0.015);
+  const nombre = Math.max(1, Math.floor(longueurArc / largeurPlanche));
   const planches = [];
   for (let indice = 0; indice < nombre; indice++) {
-    planches.push(new THREE.BoxGeometry(largeurPlanche - 0.008, hauteurFacade, 0.022).translate(
-      -reglages.largeur / 2 + (indice + 0.5) * (reglages.largeur / nombre),
-      0.02 + hauteurFacade / 2,
-      avant - 0.015,
-    ));
+    const angle = -angleComptoir + (indice + 0.5) * (2 * angleComptoir / nombre);
+    const rayon = rayonInterieur + 0.015;
+    planches.push(new THREE.BoxGeometry(largeurPlanche * (rayon / rayonInterieur) - 0.008, hauteurCeinture, 0.022)
+      .rotateY(-angle)
+      .translate(rayon * Math.sin(angle), reglages.hauteur - reglages.epaisseurPlateau - hauteurCeinture / 2, -rayon * Math.cos(angle)));
   }
-  const facade = new THREE.Mesh(mergeGeometries(planches), bois(0.35, 1.2, 0xc9a07a));
-  comptoir.add(facade);
+  comptoir.add(new THREE.Mesh(mergeGeometries(planches), bois(0.35, 0.2, 0xc9a07a)));
 
-  // Pieds arrière.
-  for (const x of [-1, 1]) {
-    const pied = new THREE.Mesh(new THREE.BoxGeometry(0.07, reglages.hauteur, 0.07), bois(0.2, 1));
-    pied.position.set(x * (reglages.largeur / 2 - 0.05), reglages.hauteur / 2, arriere + 0.05);
+  // Pieds : aux deux bouts et le long du bord du fond.
+  const hauteurPied = reglages.hauteur - reglages.epaisseurPlateau;
+  const pieds = [
+    // Aux bouts, au milieu de la largeur : loin des jambes du joueur.
+    ...[-1, 1].map((cote) => ({ rayon: (rayonInterieur + rayonExterieur) / 2, angle: cote * (angleComptoir - 0.1) })),
+    ...[-1, -1 / 3, 1 / 3, 1].map((part) => ({ rayon: rayonExterieur - 0.05, angle: part * (angleComptoir - 0.06) })),
+  ];
+  for (const { rayon, angle } of pieds) {
+    const pied = new THREE.Mesh(new THREE.BoxGeometry(0.06, hauteurPied, 0.06), bois(0.2, 1));
+    pied.position.set(rayon * Math.sin(angle), hauteurPied / 2, -rayon * Math.cos(angle));
+    pied.rotation.y = -angle;
     comptoir.add(pied);
   }
 
@@ -486,7 +495,8 @@ function poserContenant(groupe, centre, empreinte, { inclinaison = 0, lacet = 0,
  * en tas bombé.
  *
  * @param {THREE.Group} groupe - Groupe de l'étal.
- * @param {typeof import('../config.js').CONFIG} config - Configuration globale.
+ * @param {typeof import('../config.js').CONFIG.cagette} cagette - Dimensions et teinte de la cagette
+ *   (largeur : côté parallèle au comptoir ; profondeur : côté tourné vers le joueur).
  * @param {import('./modeles3D.js').BibliothequeModeles} bibliotheque - Modèles 3D.
  * @param {import('./articles.js').Article} article - Article présenté.
  * @param {THREE.Vector3} centre - Centre du dessous de la cagette (repère de la scène).
@@ -494,23 +504,23 @@ function poserContenant(groupe, centre, empreinte, { inclinaison = 0, lacet = 0,
  * @param {(repX: number, repY: number, teinte?: number) => THREE.Material} bois - Fabrique de matière bois.
  * @returns {EmplacementArticle}
  */
-function garnirCagette(groupe, config, bibliotheque, article, centre, pose, bois) {
-  const { largeur, profondeur, hauteur, epaisseurPlanche: e, couleur } = config.cagette;
+function garnirCagette(groupe, cagette, bibliotheque, article, centre, pose, bois) {
+  const { largeur, profondeur, hauteur, epaisseurPlanche: e, couleur } = cagette;
   const contenant = poserContenant(groupe, centre, { largeur, profondeur }, pose, bois);
   const morceaux = [
     // Fond à claire-voie : trois lattes.
     ...[-1, 0, 1].map((rang) => new THREE.BoxGeometry(largeur, e, profondeur / 3.6).translate(0, e / 2, rang * profondeur / 3)),
-    // Côtés longs (planche pleine) et côtés courts (montants).
+    // Côtés avant et arrière (planche pleine), côtés gauche et droit (montants).
     new THREE.BoxGeometry(largeur, hauteur * 0.7, e).translate(0, hauteur * 0.35 + e, profondeur / 2 - e / 2),
     new THREE.BoxGeometry(largeur, hauteur * 0.7, e).translate(0, hauteur * 0.35 + e, -profondeur / 2 + e / 2),
     new THREE.BoxGeometry(e, hauteur, profondeur).translate(largeur / 2 - e / 2, hauteur / 2, 0),
     new THREE.BoxGeometry(e, hauteur, profondeur).translate(-largeur / 2 + e / 2, hauteur / 2, 0),
   ];
-  const cagette = new THREE.Mesh(mergeGeometries(morceaux), bois(0.3, 0.3, couleur));
-  cagette.castShadow = true;
-  cagette.receiveShadow = true;
-  cagette.name = `cagette-${article.id}`;
-  contenant.add(cagette);
+  const maillage = new THREE.Mesh(mergeGeometries(morceaux), bois(0.3, 0.3, couleur));
+  maillage.castShadow = true;
+  maillage.receiveShadow = true;
+  maillage.name = `cagette-${article.id}`;
+  contenant.add(maillage);
 
   const interieur = { largeur: largeur - 2 * e, profondeur: profondeur - 2 * e, hauteur };
   const exemplaires = remplir(contenant, bibliotheque, article, interieur, e);
@@ -697,27 +707,4 @@ function remplir(contenant, bibliotheque, article, interieur, hauteurFond) {
     exemplaires.push(objet);
   }
   return exemplaires;
-}
-
-/**
- * Pose un exemplaire « échappé » de son contenant, couché sur le comptoir.
- *
- * @param {THREE.Group} groupe - Groupe de l'étal.
- * @param {import('./modeles3D.js').BibliothequeModeles} bibliotheque - Modèles 3D.
- * @param {import('./articles.js').Article} article - Article concerné.
- * @param {THREE.Vector3} point - Point du comptoir où il repose.
- * @returns {THREE.Object3D | null}
- */
-function poserEchappe(groupe, bibliotheque, article, point) {
-  const objet = bibliotheque.creer(article.modele, article.elements?.[0]);
-  if (!objet) {
-    return null;
-  }
-  objet.scale.setScalar(echelleArticle(bibliotheque, article));
-  objet.rotation.set(Math.PI / 2 * 0.9, Math.random() * Math.PI * 2, 0.2);
-  poserSur(objet, point);
-  objet.name = `article-${article.id}`;
-  objet.userData.article = article.id;
-  groupe.add(objet);
-  return objet;
 }

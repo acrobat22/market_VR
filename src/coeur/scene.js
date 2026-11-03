@@ -79,7 +79,7 @@ export function creerRendu(conteneur, camera) {
 function creerSoleil(reglages, reglagesEtal) {
   const soleil = new THREE.DirectionalLight(reglages.couleur, reglages.intensite);
   soleil.position.set(reglages.position.x, reglages.position.y, reglages.position.z);
-  soleil.target.position.set(0, reglagesEtal.hauteur, -reglagesEtal.distanceComptoir - reglagesEtal.profondeur / 2);
+  soleil.target.position.set(0, reglagesEtal.hauteur, -(reglagesEtal.rayonInterieur + reglagesEtal.rayonExterieur) / 2);
   soleil.castShadow = true;
   const ombre = soleil.shadow;
   ombre.mapSize.set(reglages.resolutionOmbre, reglages.resolutionOmbre);
