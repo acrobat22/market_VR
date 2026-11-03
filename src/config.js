@@ -171,6 +171,8 @@ export const CONFIG = Object.freeze({
   bouton: Object.freeze({
     largeur: 0.24,
     profondeur: 0.12,
+    /** Espace entre « Rejouer » et « Accueil », posés côte à côte. */
+    ecartEntreBoutons: 0.04,
     hauteur: 0.03,
     /** Inclinaison vers le joueur, en radians (environ 45° : bien visible d'en haut). */
     inclinaison: 0.8,
