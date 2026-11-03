@@ -9,9 +9,6 @@ sans installation.
   on remplit son panier, puis on peut rejouer.
 - Aucun chrono, aucune erreur possible ; texte en grand, sons doux.
 
-Le contexte complet, les décisions et l'état d'avancement sont dans
-[CONTEXTE.md](CONTEXTE.md).
-
 ## État d'avancement
 
 | Étape | Contenu | État |
