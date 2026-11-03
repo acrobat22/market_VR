@@ -32,7 +32,7 @@ import { Exemplaire } from './jeu/exemplaire.js';
 import { tirerListe, tirerQuantites } from './jeu/listeCourses.js';
 import { Partie, libelleLigne } from './jeu/partie.js';
 import { Bouton3D } from './interface/bouton3D.js';
-import { dessinerLecture } from './interface/icones.js';
+import { dessinerFlecheRetour, dessinerLecture } from './interface/icones.js';
 import { estAuDessusDuPanier } from './jeu/panier.js';
 import { ModeSansCasque } from './interface/modeSansCasque.js';
 import { Sons } from './interface/sons.js';
@@ -268,7 +268,7 @@ async function installerEtal(rayon) {
   idRayon = rayon;
   partie = tirerPartie();
   afficherListe();
-  boutonRejouer.objet3D.visible = false;
+  afficherBoutonsFinDePartie(false);
 }
 
 /**
@@ -293,25 +293,67 @@ function surArticleLache(exemplaire) {
   exemplaire.estDansPanier = true;
   exemplaire.deplacerVers(exemplaire.positionPourPoserSur(appui), tempsCourant);
   if (partie.estTerminee) {
-    // Liste complète : mélodie, félicitations et « Rejouer ».
+    // Liste complète : mélodie, félicitations, « Rejouer » et « Accueil ».
     sons.jouerReussite();
-    ardoise.afficherMessage('Bravo !', ['Vos courses sont faites.', 'Pincez « Rejouer » pour une nouvelle liste.']);
-    boutonRejouer.objet3D.visible = true;
+    ardoise.afficherMessage('Bravo !', [
+      'Pincez « Rejouer » pour une nouvelle liste,',
+      'ou « Accueil » pour changer d’étal.',
+    ]);
+    afficherBoutonsFinDePartie(true);
   } else {
     sons.jouerAccrochage();
     afficherListe();
   }
 }
 
-// « Rejouer » : n'apparaît qu'une fois la liste complète, au-dessus du panier.
+// « Rejouer » et « Accueil » : n'apparaissent qu'une fois la liste complète,
+// côte à côte au-dessus du panier.
 const boutonRejouer = new Bouton3D(CONFIG.bouton, {
   libelle: 'Rejouer',
   dessinerIcone: dessinerLecture,
   surAppui: () => commencerNouvellePartie(),
 });
-boutonRejouer.objet3D.position.set(centrePanier.x, hauteurBordPanier + CONFIG.bouton.hauteurAuDessusPanier, centrePanier.z);
-boutonRejouer.objet3D.visible = false;
-scene.add(boutonRejouer.objet3D);
+const boutonAccueil = new Bouton3D(CONFIG.bouton, {
+  libelle: 'Accueil',
+  dessinerIcone: dessinerFlecheRetour,
+  surAppui: () => revenirAAccueil(),
+});
+const boutonsFinDePartie = [boutonRejouer, boutonAccueil];
+const decalageBouton = (CONFIG.bouton.largeur + CONFIG.bouton.ecartEntreBoutons) / 2;
+boutonsFinDePartie.forEach((bouton, indice) => {
+  const sens = indice === 0 ? -1 : 1;
+  bouton.objet3D.position.set(
+    centrePanier.x + sens * decalageBouton,
+    hauteurBordPanier + CONFIG.bouton.hauteurAuDessusPanier,
+    centrePanier.z,
+  );
+  bouton.objet3D.visible = false;
+  scene.add(bouton.objet3D);
+});
+
+/**
+ * Affiche ou cache les boutons de fin de partie.
+ *
+ * @param {boolean} estVisible
+ */
+function afficherBoutonsFinDePartie(estVisible) {
+  for (const bouton of boutonsFinDePartie) {
+    bouton.objet3D.visible = estVisible;
+  }
+}
+
+/**
+ * Retour à la page d'accueil : en VR, la session est fermée ; sans casque, le
+ * mode souris est quitté. Dans les deux cas, une nouvelle partie se prépare
+ * (écouteur « sessionend » ou retour du mode sans casque).
+ */
+function revenirAAccueil() {
+  if (renderer.xr.isPresenting) {
+    sessionXR.terminer();
+  } else {
+    modeSansCasque.desactiver();
+  }
+}
 
 /** Nouvelle partie sur le même étal : il est regarni, et une nouvelle liste est tirée. */
 function commencerNouvellePartie() {
@@ -332,9 +374,11 @@ await installerEtal(rayonChoisi(listeRayons));
  */
 const ecouteursPincement = {
   surDebutPincement: (cote, point, options) => {
-    // Un pincement sur « Rejouer » (s'il est affiché) l'active ; ailleurs, il saisit un article.
-    if (boutonRejouer.objet3D.visible && boutonRejouer.estVise(point)) {
-      boutonRejouer.appuyer(tempsCourant);
+    // Un pincement sur un bouton de fin de partie (s'il est affiché) l'active ;
+    // ailleurs, il saisit un article.
+    const boutonVise = boutonsFinDePartie.find((bouton) => bouton.objet3D.visible && bouton.estVise(point));
+    if (boutonVise) {
+      boutonVise.appuyer(tempsCourant);
       sons.jouerSaisie();
     } else if (saisie.saisir(cote, point, options)) {
       sons.jouerSaisie();
@@ -398,7 +442,9 @@ renderer.setAnimationLoop((temps) => {
   souris.mettreAJour();
   const pointsDePincement = new Map([...mains.pointsDePincement, ...souris.pointsDePincement]);
   saisie.mettreAJour(pointsDePincement);
-  boutonRejouer.mettreAJour(pointsDePincement, temps);
+  for (const bouton of boutonsFinDePartie) {
+    bouton.mettreAJour(pointsDePincement, temps);
+  }
   for (const exemplaire of exemplaires) {
     // Revenu à sa place : l'article peut de nouveau être pris. Dans le panier, il y reste.
     if (exemplaire.mettreAJour(temps) && !exemplaire.estDansPanier) {

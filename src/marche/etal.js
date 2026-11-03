@@ -12,7 +12,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 import { calculerEchelle } from './articles.js';
 import { creerMatiere } from './matieres.js';
-import { Tas } from './tas.js';
+import { Tas, profilDeTriangles } from './tas.js';
 
 /**
  * @typedef {object} EmplacementArticle
@@ -544,6 +544,58 @@ function echelleArticle(bibliotheque, article) {
   return echellesArticles.get(article.id);
 }
 
+/** Triangles de chaque modèle, relevés une fois (article et élément → triangles). */
+const trianglesModeles = new Map();
+
+/**
+ * Triangles de la surface d'un modèle, dans son propre repère (avant échelle
+ * et rotation des exemplaires).
+ *
+ * @param {THREE.Object3D} objet - Copie neuve du modèle.
+ * @returns {Float32Array} Sommets à la suite, trois par triangle : x, y, z…
+ */
+function trianglesDuModele(objet) {
+  const triangles = [];
+  const sommet = new THREE.Vector3();
+  objet.updateMatrixWorld(true);
+  const versObjet = objet.matrixWorld.clone().invert();
+  objet.traverse((maillage) => {
+    if (!maillage.isMesh) {
+      return;
+    }
+    const matrice = versObjet.clone().multiply(maillage.matrixWorld);
+    const positions = maillage.geometry.attributes.position;
+    const index = maillage.geometry.index;
+    const nombre = index ? index.count : positions.count;
+    for (let rang = 0; rang < nombre; rang++) {
+      sommet.fromBufferAttribute(positions, index ? index.getX(rang) : rang).applyMatrix4(matrice);
+      triangles.push(sommet.x, sommet.y, sommet.z);
+    }
+  });
+  return new Float32Array(triangles);
+}
+
+/**
+ * Profil d'un exemplaire dans son orientation définitive (échelle, inclinaison
+ * et lacet déjà appliqués à `objet`, sans position), pour le tas.
+ *
+ * @param {THREE.Object3D} objet - Exemplaire.
+ * @param {Float32Array} pointsLocaux - Triangles du modèle (`trianglesDuModele`).
+ * @returns {import('./tas.js').ProfilArticle}
+ */
+function profilExemplaire(objet, pointsLocaux) {
+  objet.updateMatrix();
+  const e = objet.matrix.elements;
+  const points = new Float32Array(pointsLocaux.length);
+  for (let i = 0; i < pointsLocaux.length; i += 3) {
+    const [x, y, z] = [pointsLocaux[i], pointsLocaux[i + 1], pointsLocaux[i + 2]];
+    points[i] = e[0] * x + e[4] * y + e[8] * z;
+    points[i + 1] = e[1] * x + e[5] * y + e[9] * z;
+    points[i + 2] = e[2] * x + e[6] * y + e[10] * z;
+  }
+  return profilDeTriangles(points);
+}
+
 /** Au-delà de ce rapport longueur / largeur, un article est « allongé ». */
 const RAPPORT_ALLONGE = 1.3;
 
@@ -596,9 +648,14 @@ function remplir(contenant, bibliotheque, article, interieur, hauteurFond) {
   const exemplaires = [];
   let echecs = 0;
   while (exemplaires.length < article.quantite && echecs < ECHECS_CONTENANT_PLEIN) {
-    const objet = bibliotheque.creer(article.modele, elements[exemplaires.length % elements.length]);
+    const element = elements[exemplaires.length % elements.length];
+    const objet = bibliotheque.creer(article.modele, element);
     if (!objet) {
       break;
+    }
+    const cle = `${article.id}|${element ?? ''}`;
+    if (!trianglesModeles.has(cle)) {
+      trianglesModeles.set(cle, trianglesDuModele(objet));
     }
     objet.scale.setScalar(echelle);
 
@@ -618,19 +675,21 @@ function remplir(contenant, bibliotheque, article, interieur, hauteurFond) {
       ? (taille.x >= taille.z ? 0 : Math.PI / 2) + (Math.random() < 0.5 ? 0 : Math.PI)
         + (Math.random() - 0.5) * 2 * desordre
       : Math.random() * Math.PI * 2;
-    const place = tas.deposer({
-      demiLongueur: taille.x / 2,
-      demiLargeur: taille.z / 2,
-      demiHauteur: taille.y / 2,
-      lacet,
-    }, Math.random, hauteurFond + Math.max(interieur.hauteur * REMPLISSAGE_MAXIMAL, taille.y * APPUI_GROS_ARTICLES));
+    objet.rotation.y = lacet;
+    // Vraie forme de l'exemplaire tourné : il se pose au contact de ses voisins.
+    const profil = profilExemplaire(objet, trianglesModeles.get(cle));
+    const place = tas.deposer(
+      profil,
+      Math.random,
+      hauteurFond + Math.max(interieur.hauteur * REMPLISSAGE_MAXIMAL, profil.hauteur * APPUI_GROS_ARTICLES),
+    );
     if (!place) {
       // Pas de place assez basse : on réessaie avec une autre orientation.
       echecs += 1;
       continue;
     }
     echecs = 0;
-    objet.rotation.y = lacet;
+    // Centre de la boîte englobante en (x, z), point le plus bas à `bas` : comme le profil.
     poserSur(objet, new THREE.Vector3(place.x, place.bas, place.z));
     objet.name = `article-${article.id}`;
     objet.userData.article = article.id;

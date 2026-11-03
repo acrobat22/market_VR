@@ -106,6 +106,23 @@ export class SessionXR {
   }
 
   /**
+   * Ferme la session immersive (retour à la page d'accueil).
+   * Documentation : https://developer.mozilla.org/fr/docs/Web/API/XRSession/end
+   *
+   * @returns {Promise<void>}
+   */
+  async terminer() {
+    if (!this.sessionActive) {
+      return;
+    }
+    try {
+      await this.sessionActive.end();
+    } catch (erreur) {
+      console.error('[SessionXR.terminer] Fermeture de la session impossible :', erreur);
+    }
+  }
+
+  /**
    * Interroge le navigateur sur la prise en charge du mode immersif.
    *
    * @returns {Promise<boolean>}

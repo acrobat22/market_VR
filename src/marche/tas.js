@@ -3,28 +3,35 @@
  *
  * Logique pure (sans Three.js), testable avec `node --test`. Le fond du
  * contenant est découpé en petites cases dont on retient la hauteur (carte des
- * hauteurs). Chaque article, assimilé à un ovoïde, est lâché à un endroit tiré
- * au hasard et descend jusqu'à toucher ce qui est déjà là : il se cale dans
- * les creux entre ses voisins, comme dans un vrai tas, sans moteur physique.
+ * hauteurs). Chaque article est décrit par sa vraie forme, relevée sur son
+ * modèle 3D (hauteur de son dessous et de son dessus dans chaque case). Il est
+ * lâché à un endroit tiré au hasard et descend jusqu'à toucher ce qui est déjà
+ * là : il se cale dans les creux entre ses voisins, comme dans un vrai tas,
+ * sans moteur physique et sans flotter au-dessus d'eux.
  */
 
 /**
- * @typedef {object} FormeArticle
- * @property {number} demiLongueur - Demi-dimension selon l'axe x de l'article (avant rotation).
- * @property {number} demiLargeur - Demi-dimension selon l'axe z de l'article (avant rotation).
- * @property {number} demiHauteur - Demi-hauteur.
- * @property {number} lacet - Rotation autour de la verticale, en radians (comme `rotation.y` de Three.js).
+ * @typedef {object} ProfilArticle
+ * Forme d'un article dans son orientation définitive, sur une grille de cases
+ * centrée sur sa boîte englobante (vue de dessus).
+ * @property {number} colonnes - Nombre de cases selon x.
+ * @property {number} rangees - Nombre de cases selon z.
+ * @property {Float64Array} dessous - Hauteur du dessous de l'article dans chaque case,
+ *   au-dessus de son point le plus bas (`Infinity` : case vide).
+ * @property {Float64Array} dessus - Hauteur du dessus de l'article dans chaque case,
+ *   au-dessus de son point le plus bas (`-Infinity` : case vide).
+ * @property {number} hauteur - Hauteur totale de l'article.
  */
 
 /**
  * @typedef {object} Place
- * @property {number} x - Centre de l'article, dans le repère du contenant.
- * @property {number} z - Centre de l'article, dans le repère du contenant.
- * @property {number} bas - Hauteur du dessous de l'article.
+ * @property {number} x - Centre de la boîte englobante de l'article, dans le repère du contenant.
+ * @property {number} z - Centre de la boîte englobante de l'article, dans le repère du contenant.
+ * @property {number} bas - Hauteur du point le plus bas de l'article.
  */
 
 /** Taille d'une case de la carte des hauteurs, en mètres. */
-const PAS_CARTE = 0.005;
+export const PAS_CARTE = 0.005;
 
 /** Nombre d'emplacements essayés par article (le meilleur est gardé). */
 const ESSAIS = 24;
@@ -37,6 +44,75 @@ const ESSAIS = 24;
  * au centre empêcherait d'en loger un second à côté.
  */
 const PREFERENCE_CENTRE = 0.5;
+
+/**
+ * Relève le profil d'un article à partir des triangles de sa surface, déjà
+ * placés dans son orientation définitive (seule leur position compte, pas
+ * l'origine). La surface est lue au centre de chaque case, comme par un
+ * rayon vertical : le dessous et le dessus y sont exacts, même sur les flancs
+ * arrondis d'un petit fruit, où la hauteur change beaucoup d'un bord de la
+ * case à l'autre.
+ *
+ * @param {ArrayLike<number>} triangles - Sommets à la suite, trois par triangle :
+ *   x, y, z, x, y, z, x, y, z…
+ * @returns {ProfilArticle}
+ */
+export function profilDeTriangles(triangles) {
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, minZ = Infinity, maxZ = -Infinity;
+  for (let i = 0; i < triangles.length; i += 3) {
+    minX = Math.min(minX, triangles[i]); maxX = Math.max(maxX, triangles[i]);
+    minY = Math.min(minY, triangles[i + 1]); maxY = Math.max(maxY, triangles[i + 1]);
+    minZ = Math.min(minZ, triangles[i + 2]); maxZ = Math.max(maxZ, triangles[i + 2]);
+  }
+  const colonnes = Math.max(1, Math.ceil((maxX - minX) / PAS_CARTE));
+  const rangees = Math.max(1, Math.ceil((maxZ - minZ) / PAS_CARTE));
+  // La grille est centrée sur la boîte englobante.
+  const origineX = (minX + maxX) / 2 - colonnes * PAS_CARTE / 2;
+  const origineZ = (minZ + maxZ) / 2 - rangees * PAS_CARTE / 2;
+  const dessous = new Float64Array(colonnes * rangees).fill(Infinity);
+  const dessus = new Float64Array(colonnes * rangees).fill(-Infinity);
+
+  for (let i = 0; i + 8 < triangles.length; i += 9) {
+    const ax = triangles[i], ay = triangles[i + 1], az = triangles[i + 2];
+    const bx = triangles[i + 3], by = triangles[i + 4], bz = triangles[i + 5];
+    const cx = triangles[i + 6], cy = triangles[i + 7], cz = triangles[i + 8];
+    // Aire (vue de dessus) : un triangle vertical ne coupe aucun rayon vertical.
+    const aire = (bx - ax) * (cz - az) - (cx - ax) * (bz - az);
+    if (Math.abs(aire) < 1e-14) {
+      continue;
+    }
+    // Centres de cases compris dans le triangle, vu de dessus.
+    const premiereColonne = Math.max(0, Math.ceil((Math.min(ax, bx, cx) - origineX) / PAS_CARTE - 0.5));
+    const derniereColonne = Math.min(colonnes - 1, Math.floor((Math.max(ax, bx, cx) - origineX) / PAS_CARTE - 0.5));
+    const premiereRangee = Math.max(0, Math.ceil((Math.min(az, bz, cz) - origineZ) / PAS_CARTE - 0.5));
+    const derniereRangee = Math.min(rangees - 1, Math.floor((Math.max(az, bz, cz) - origineZ) / PAS_CARTE - 0.5));
+    for (let rangee = premiereRangee; rangee <= derniereRangee; rangee++) {
+      const z = origineZ + (rangee + 0.5) * PAS_CARTE;
+      for (let colonne = premiereColonne; colonne <= derniereColonne; colonne++) {
+        const x = origineX + (colonne + 0.5) * PAS_CARTE;
+        // Coordonnées barycentriques du centre de la case.
+        const poidsB = ((x - ax) * (cz - az) - (cx - ax) * (z - az)) / aire;
+        const poidsC = ((bx - ax) * (z - az) - (x - ax) * (bz - az)) / aire;
+        const poidsA = 1 - poidsB - poidsC;
+        if (poidsA < -1e-9 || poidsB < -1e-9 || poidsC < -1e-9) {
+          continue;
+        }
+        const hauteur = poidsA * ay + poidsB * by + poidsC * cy - minY;
+        const indice = rangee * colonnes + colonne;
+        dessous[indice] = Math.min(dessous[indice], hauteur);
+        dessus[indice] = Math.max(dessus[indice], hauteur);
+      }
+    }
+  }
+
+  // Article plus fin qu'une case (aucun centre touché) : une seule case, toute sa hauteur.
+  if (!dessous.some(Number.isFinite)) {
+    const centre = (rangees >> 1) * colonnes + (colonnes >> 1);
+    dessous[centre] = 0;
+    dessus[centre] = maxY - minY;
+  }
+  return { colonnes, rangees, dessous, dessus, hauteur: maxY - minY };
+}
 
 /**
  * Tas d'articles dans un contenant rectangulaire centré sur l'origine.
@@ -63,113 +139,95 @@ export class Tas {
    * légère préférence pour le centre (le tas est bombé). L'article est ajouté
    * au tas, sauf s'il devrait être posé trop haut (le contenant est plein).
    *
-   * @param {FormeArticle} forme - Dimensions et orientation de l'article.
+   * @param {ProfilArticle} profil - Forme de l'article (voir `profilDeTriangles`).
    * @param {() => number} [hasard=Math.random] - Renvoie un nombre dans [0, 1[.
    * @param {number} [basMaximal=Infinity] - Hauteur maximale du dessous de l'article.
    * @returns {Place | null} Place de l'article, ou `null` s'il n'y a plus de place assez basse.
    */
-  deposer(forme, hasard = Math.random, basMaximal = Infinity) {
-    const { x: etendueX, z: etendueZ } = etendueAuSol(forme);
-    // Le centre reste assez loin des bords pour que l'article tienne dedans.
-    const jeuX = Math.max(0, this.largeur / 2 - etendueX);
-    const jeuZ = Math.max(0, this.profondeur / 2 - etendueZ);
-    const surfaceArticle = Math.PI * forme.demiLongueur * forme.demiLargeur;
-    const preference = PREFERENCE_CENTRE * Math.max(0, 1 - 4 * surfaceArticle / (this.largeur * this.profondeur));
+  deposer(profil, hasard = Math.random, basMaximal = Infinity) {
+    // Décalages (en cases) possibles pour que l'article tienne dans le contenant ;
+    // un article plus grand que le contenant est centré.
+    const jeuColonnes = this.colonnes - profil.colonnes;
+    const jeuRangees = this.rangees - profil.rangees;
+    const surfaceArticle = profil.colonnes * profil.rangees * (Math.PI / 4);
+    const preference = PREFERENCE_CENTRE * Math.max(0, 1 - 4 * surfaceArticle / (this.colonnes * this.rangees));
     let meilleure = null;
     for (let essai = 0; essai < ESSAIS; essai++) {
-      const x = jeuX * (2 * hasard() - 1);
-      const z = jeuZ * (2 * hasard() - 1);
-      const centre = this.#hauteurAuRepos(x, z, forme);
+      const premiereColonne = jeuColonnes > 0 ? Math.floor(hasard() * (jeuColonnes + 1)) : Math.round(jeuColonnes / 2);
+      const premiereRangee = jeuRangees > 0 ? Math.floor(hasard() * (jeuRangees + 1)) : Math.round(jeuRangees / 2);
+      const bas = this.#basAuRepos(premiereColonne, premiereRangee, profil);
       // Distance au centre, de 0 (centre) à 1 (bord), dans chaque direction.
-      const eloignement = ((jeuX > 0 ? (x / jeuX) ** 2 : 0) + (jeuZ > 0 ? (z / jeuZ) ** 2 : 0)) / 2;
-      const cout = centre + preference * forme.demiHauteur * 2 * eloignement;
+      const eloignement = ((jeuColonnes > 0 ? (2 * premiereColonne / jeuColonnes - 1) ** 2 : 0)
+        + (jeuRangees > 0 ? (2 * premiereRangee / jeuRangees - 1) ** 2 : 0)) / 2;
+      const cout = bas + preference * profil.hauteur * eloignement;
       if (!meilleure || cout < meilleure.cout) {
-        meilleure = { x, z, centre, cout };
+        meilleure = { premiereColonne, premiereRangee, bas, cout };
       }
     }
-    const bas = meilleure.centre - forme.demiHauteur;
-    if (bas > basMaximal) {
+    if (meilleure.bas > basMaximal) {
       return null;
     }
-    this.#poser(meilleure.x, meilleure.z, meilleure.centre, forme);
-    return { x: meilleure.x, z: meilleure.z, bas };
+    this.#poser(meilleure.premiereColonne, meilleure.premiereRangee, meilleure.bas, profil);
+    return {
+      x: (meilleure.premiereColonne + profil.colonnes / 2) * PAS_CARTE - this.largeur / 2,
+      z: (meilleure.premiereRangee + profil.rangees / 2) * PAS_CARTE - this.profondeur / 2,
+      bas: meilleure.bas,
+    };
   }
 
   /**
-   * Hauteur du centre de l'article posé en (x, z) : il descend jusqu'à ce que
-   * son dessous touche le tas en un point.
+   * Hauteur du point le plus bas de l'article posé à partir de la case donnée :
+   * il descend jusqu'à ce que son dessous touche le tas en un point.
    *
-   * @param {number} x - Centre de l'article.
-   * @param {number} z - Centre de l'article.
-   * @param {FormeArticle} forme - Dimensions et orientation.
+   * @param {number} premiereColonne - Case du tas sous la première colonne de l'article.
+   * @param {number} premiereRangee - Case du tas sous la première rangée de l'article.
+   * @param {ProfilArticle} profil - Forme de l'article.
    * @returns {number}
    */
-  #hauteurAuRepos(x, z, forme) {
-    let centre = -Infinity;
-    this.#parcourirEmpreinte(x, z, forme, (indice, epaisseur) => {
-      centre = Math.max(centre, this.hauteurs[indice] + epaisseur);
+  #basAuRepos(premiereColonne, premiereRangee, profil) {
+    let bas = -Infinity;
+    this.#parcourirEmpreinte(premiereColonne, premiereRangee, profil, (indiceTas, indiceArticle) => {
+      bas = Math.max(bas, this.hauteurs[indiceTas] - profil.dessous[indiceArticle]);
     });
-    return centre;
+    return bas;
   }
 
   /**
    * Ajoute l'article au tas : la carte des hauteurs suit son dessus.
    *
-   * @param {number} x - Centre de l'article.
-   * @param {number} z - Centre de l'article.
-   * @param {number} centre - Hauteur du centre de l'article.
-   * @param {FormeArticle} forme - Dimensions et orientation.
+   * @param {number} premiereColonne - Case du tas sous la première colonne de l'article.
+   * @param {number} premiereRangee - Case du tas sous la première rangée de l'article.
+   * @param {number} bas - Hauteur du point le plus bas de l'article.
+   * @param {ProfilArticle} profil - Forme de l'article.
    */
-  #poser(x, z, centre, forme) {
-    this.#parcourirEmpreinte(x, z, forme, (indice, epaisseur) => {
-      this.hauteurs[indice] = Math.max(this.hauteurs[indice], centre + epaisseur);
+  #poser(premiereColonne, premiereRangee, bas, profil) {
+    this.#parcourirEmpreinte(premiereColonne, premiereRangee, profil, (indiceTas, indiceArticle) => {
+      this.hauteurs[indiceTas] = Math.max(this.hauteurs[indiceTas], bas + profil.dessus[indiceArticle]);
     });
   }
 
   /**
-   * Appelle `visiter` pour chaque case sous l'article, avec la demi-épaisseur
-   * de l'ovoïde à cet endroit (maximale au centre, nulle au bord).
+   * Appelle `visiter` pour chaque case occupée par l'article et située dans le contenant.
    *
-   * @param {number} x - Centre de l'article.
-   * @param {number} z - Centre de l'article.
-   * @param {FormeArticle} forme - Dimensions et orientation.
-   * @param {(indice: number, epaisseur: number) => void} visiter - Appelée pour chaque case.
+   * @param {number} premiereColonne - Case du tas sous la première colonne de l'article.
+   * @param {number} premiereRangee - Case du tas sous la première rangée de l'article.
+   * @param {ProfilArticle} profil - Forme de l'article.
+   * @param {(indiceTas: number, indiceArticle: number) => void} visiter - Appelée pour chaque case.
    */
-  #parcourirEmpreinte(x, z, forme, visiter) {
-    const { x: etendueX, z: etendueZ } = etendueAuSol(forme);
-    const cosinus = Math.cos(forme.lacet);
-    const sinus = Math.sin(forme.lacet);
-    const premiereColonne = Math.max(0, Math.floor((x - etendueX + this.largeur / 2) / PAS_CARTE));
-    const derniereColonne = Math.min(this.colonnes - 1, Math.floor((x + etendueX + this.largeur / 2) / PAS_CARTE));
-    const premiereRangee = Math.max(0, Math.floor((z - etendueZ + this.profondeur / 2) / PAS_CARTE));
-    const derniereRangee = Math.min(this.rangees - 1, Math.floor((z + etendueZ + this.profondeur / 2) / PAS_CARTE));
-    for (let rangee = premiereRangee; rangee <= derniereRangee; rangee++) {
-      const dz = (rangee + 0.5) * PAS_CARTE - this.profondeur / 2 - z;
-      for (let colonne = premiereColonne; colonne <= derniereColonne; colonne++) {
-        const dx = (colonne + 0.5) * PAS_CARTE - this.largeur / 2 - x;
-        // Coordonnées dans les axes de l'article (rotation inverse du lacet).
-        const u = (dx * cosinus - dz * sinus) / forme.demiLongueur;
-        const v = (dx * sinus + dz * cosinus) / forme.demiLargeur;
-        const distance = u * u + v * v;
-        if (distance < 1) {
-          visiter(rangee * this.colonnes + colonne, forme.demiHauteur * Math.sqrt(1 - distance));
+  #parcourirEmpreinte(premiereColonne, premiereRangee, profil, visiter) {
+    for (let rangee = 0; rangee < profil.rangees; rangee++) {
+      const rangeeTas = premiereRangee + rangee;
+      if (rangeeTas < 0 || rangeeTas >= this.rangees) {
+        continue;
+      }
+      for (let colonne = 0; colonne < profil.colonnes; colonne++) {
+        const colonneTas = premiereColonne + colonne;
+        const indiceArticle = rangee * profil.colonnes + colonne;
+        if (colonneTas < 0 || colonneTas >= this.colonnes || profil.dessous[indiceArticle] === Infinity) {
+          continue;
         }
+        visiter(rangeeTas * this.colonnes + colonneTas, indiceArticle);
       }
     }
   }
-}
-
-/**
- * Demi-étendue au sol (selon x et z) d'un article tourné de son lacet.
- *
- * @param {FormeArticle} forme - Dimensions et orientation.
- * @returns {{ x: number, z: number }}
- */
-function etendueAuSol({ demiLongueur, demiLargeur, lacet }) {
-  const cosinus = Math.cos(lacet);
-  const sinus = Math.sin(lacet);
-  return {
-    x: Math.hypot(demiLongueur * cosinus, demiLargeur * sinus),
-    z: Math.hypot(demiLongueur * sinus, demiLargeur * cosinus),
-  };
 }
