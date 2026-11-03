@@ -87,38 +87,57 @@ export const CONFIG = Object.freeze({
    * fournit la position et le regard).
    */
   camera: Object.freeze({
-    position: Object.freeze({ x: 0, y: 1.32, z: 0.35 }),
-    visee: Object.freeze({ x: 0, y: 1.03, z: -0.85 }),
+    position: Object.freeze({ x: 0, y: 1.5, z: 0.62 }),
+    visee: Object.freeze({ x: 0, y: 0.92, z: -0.4 }),
     champDeVision: 66,
   }),
 
-  /** Étal : comptoir, structure et auvent. */
+  /**
+   * Étal en arc autour du joueur assis (à l'origine, face à -z) : tout est à
+   * portée de main sans se lever (vérifié par tests/disposition.test.js).
+   * Les angles sont mesurés depuis l'axe -z, vers la droite (+x).
+   */
   etal: Object.freeze({
-    /** Distance entre le joueur et le bord avant du comptoir. */
-    distanceComptoir: 0.38,
-    /** Nombre de cagettes : 6 au rang arrière, 4 au rang avant (un rayon plus riche en montre autant, au hasard). */
-    nombreCagettes: 10,
-    largeur: 2.1,
-    profondeur: 0.62,
+    /** Nombre de cagettes : 6 sur le gradin, 2 au rang avant (un rayon plus riche en montre autant, au hasard). */
+    nombreCagettes: 8,
+    /** Panier du joueur, droit devant. */
+    rayonPanier: 0.38,
+    /** Rang avant : deux cagettes, de part et d'autre du panier (environ 60°). */
+    rayonRangAvant: 0.44,
+    angleRangAvant: 1.05,
+    /** Rang arrière : six cagettes sur le gradin, posées en long (la longueur vers le joueur). */
+    rayonRangArriere: 0.68,
+    pasRangArriere: 0.5,
+    /** Comptoir en arc : bords intérieur et extérieur, demi-angle couvert. */
+    rayonInterieur: 0.2,
+    rayonExterieur: 0.86,
+    angleComptoir: 1.55,
     hauteur: 0.74,
     epaisseurPlateau: 0.05,
-    /** Gradin du fond (rang arrière surélevé). */
-    hauteurGradin: 0.1,
-    profondeurGradin: 0.27,
+    /**
+     * Gradin du rang arrière : il commence juste derrière le rang avant ; les
+     * cagettes du gradin le débordent un peu, au-dessus du rang avant.
+     */
+    rayonGradin: 0.59,
+    angleGradin: 1.5,
+    hauteurGradin: 0.13,
+    /** Structure (poteaux, auvent, étagère) : rectangle autour du comptoir. */
+    largeur: 1.8,
+    avantStructure: 0.05,
+    arriereStructure: -0.95,
     /** Poteaux et auvent. */
     rayonPoteau: 0.045,
     hauteurAvant: 1.95,
     hauteurArriere: 2.25,
-    debordAuvent: 0.35,
+    /** Débord de l'auvent au-dessus de la tête du joueur. */
+    debordAuvent: 0.1,
     couleursRayures: Object.freeze(['#c8463d', '#f3ead8']),
     nombreRayures: 9,
     /** Étagère du fond. */
     hauteurEtagere: 1.25,
-    /** Disposition vivante des rangs (rien n'est parfaitement aligné). */
-    courbureRangs: 0.06,
-    orientationVersJoueur: 0.6,
-    desordreAngle: 0.12,
-    desordrePosition: 0.015,
+    /** Disposition vivante (rien n'est parfaitement aligné) : écarts d'angle et de position au hasard. */
+    desordreAngle: 0.06,
+    desordrePosition: 0.008,
     /** Cagettes du fond inclinées vers le joueur (radians) et rehaussées sur des cales (m). */
     inclinaisonRangArriere: 0.22,
     rehausses: Object.freeze([0.03, 0, 0.06, 0.02, 0.05, 0]),
@@ -211,12 +230,6 @@ export const CONFIG = Object.freeze({
     /** Hauteur de la traverse où sont attachées les cordelettes. */
     hauteurAccroche: 1.93,
   }),
-
-  /**
-   * Articles dont un exemplaire s'est « échappé » sur le comptoir, devant le
-   * gradin (cagettes éloignées du panier, pour ne pas les confondre avec lui).
-   */
-  echappes: Object.freeze(['pomme', 'poire', 'kiwi', 'pomme-de-terre']),
 
   /** Objets posés sur l'étagère du fond, pour le décor. */
   etagere: Object.freeze([
